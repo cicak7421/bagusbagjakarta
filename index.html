@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BagusBag Jakarta | Goodie Bag, Paper Bag & Tas Spunbond Premium</title>
+  <meta name="description" content="Jual goodie bag, paper bag, dan tas spunbond premium dengan 150+ motif. Cocok untuk souvenir, hampers, wedding, seminar, ulang tahun, promosi bisnis, dan kebutuhan toko." />
+  <meta name="keywords" content="goodie bag, paper bag, tas spunbond, tas souvenir, tas kado, tas hampers, goodie bag murah, paper bag jakarta, tas belanja" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://cicak7421.github.io/bagusbagjakarta/" />
+  <meta property="og:title" content="BagusBag Jakarta - Goodie Bag & Paper Bag Premium" />
+  <meta property="og:description" content="Katalog 150+ motif goodie bag, paper bag, dan tas spunbond. Order mudah via WhatsApp." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="assets/og-placeholder.svg" />
+  <link rel="icon" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"Store","name":"BagusBag Jakarta","description":"Jual goodie bag, paper bag, dan tas spunbond premium dengan banyak motif.","areaServed":"Indonesia","url":"https://cicak7421.github.io/bagusbagjakarta/","sameAs":[]}
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#home" aria-label="BagusBag Jakarta"><span class="brand-mark">BB</span><span><b id="brandName">BagusBag Jakarta</b><small>Goodie Bag & Paper Bag</small></span></a>
+    <nav>
+      <a href="#produk">Produk</a><a href="#harga">Price List</a><a href="#cara-order">Cara Order</a><a href="#faq">FAQ</a><a class="nav-admin" href="admin.html">Admin</a>
+    </nav>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <div class="hero-text">
+        <p class="eyebrow">Supplier tas souvenir · 150+ motif ready</p>
+        <h1 id="heroTitle">Goodie Bag, Paper Bag & Tas Spunbond Premium untuk Semua Kebutuhan</h1>
+        <p id="heroSubtitle">Pilihan motif lengkap untuk hampers, wedding, ulang tahun, seminar, promosi bisnis, dan kebutuhan toko. Order mudah via WhatsApp.</p>
+        <div class="hero-actions"><a class="btn primary" id="waHero" href="#">Order via WhatsApp</a><a class="btn ghost" href="#produk">Lihat Katalog</a></div>
+        <div class="stats"><span><b id="statMotif">150+</b> Motif</span><span><b>3</b> Kategori</span><span><b>Ready</b> Grosir</span></div>
+      </div>
+      <div class="hero-card">
+        <img src="assets/og-placeholder.svg" alt="Katalog goodie bag BagusBag Jakarta" />
+        <div class="floating-card"><b>Mulai dari</b><span id="startingPrice">Rp2.950</span></div>
+      </div>
+    </section>
+
+    <section class="trust-section" aria-label="Keunggulan toko">
+      <article><b>Banyak Motif</b><span>Lebih mudah pilih produk sesuai tema acara atau kebutuhan bisnis.</span></article>
+      <article><b>Harga Grosir</b><span>Price list jelas untuk pembelian satuan maupun banyak.</span></article>
+      <article><b>Order Praktis</b><span>Pilih produk, klik WhatsApp, lalu kirim format pesanan.</span></article>
+      <article><b>Admin Mudah</b><span>Produk, foto, harga, dan tampilan bisa diedit dari dashboard.</span></article>
+    </section>
+
+    <section id="produk" class="section">
+      <div class="section-head">
+        <div><p class="eyebrow">Katalog Produk</p><h2>Temukan motif yang cocok</h2><p>Gunakan pencarian dan filter untuk mencari produk dari ratusan motif.</p></div>
+        <div class="view-switch"><button data-view="grid" class="active">Grid</button><button data-view="compact">Compact</button><button data-view="list">List</button></div>
+      </div>
+      <div class="toolbar">
+        <input id="searchInput" type="search" placeholder="Cari motif, ukuran, kategori..." />
+        <select id="categoryFilter"><option value="all">Semua Kategori</option></select>
+        <select id="sizeFilter"><option value="all">Semua Ukuran</option></select>
+        <select id="sortFilter"><option value="default">Urutan default</option><option value="priceLow">Harga termurah</option><option value="priceHigh">Harga tertinggi</option><option value="name">Nama A-Z</option></select>
+      </div>
+      <div class="result-line"><span id="resultCount">0 produk</span><button id="resetFilter">Reset filter</button></div>
+      <div id="productGrid" class="product-grid"></div>
+    </section>
+
+    <section id="harga" class="section split">
+      <div><p class="eyebrow">Price List</p><h2>Harga transparan untuk pembelian satuan dan grosir</h2><p>Harga bisa disesuaikan dari admin panel sesuai kategori, ukuran, atau minimum pembelian.</p></div>
+      <div class="price-card"><table><thead><tr><th>Produk</th><th>Ukuran</th><th>Harga Mulai</th></tr></thead><tbody id="priceTable"></tbody></table></div>
+    </section>
+
+    <section id="cara-order" class="section order-section">
+      <div class="section-head"><div><p class="eyebrow">Cara Pesan</p><h2>Order cepat lewat WhatsApp</h2></div></div>
+      <div class="steps"><article><b>1. Pilih Produk</b><span>Cari motif, kategori, dan ukuran yang diinginkan.</span></article><article><b>2. Klik Order</b><span>Tombol WhatsApp otomatis membawa detail produk.</span></article><article><b>3. Konfirmasi Stok</b><span>Admin akan cek stok, jumlah, dan estimasi pengiriman.</span></article><article><b>4. Proses Pesanan</b><span>Pesanan diproses sesuai antrean setelah data lengkap.</span></article></div>
+      <a class="btn primary center" id="waOrder" href="#">Konsultasi Pesanan Sekarang</a>
+    </section>
+
+    <section id="faq" class="section faq-section">
+      <p class="eyebrow">FAQ</p><h2>Pertanyaan umum</h2>
+      <details open><summary>Apakah bisa beli banyak motif?</summary><p>Bisa. Silakan kirim daftar motif, ukuran, dan jumlah melalui WhatsApp agar admin cek stok.</p></details>
+      <details><summary>Apakah cocok untuk souvenir acara?</summary><p>Cocok untuk wedding, seminar, ulang tahun, hampers, event kantor, dan kebutuhan promosi bisnis.</p></details>
+      <details><summary>Apakah harga bisa berubah?</summary><p>Bisa berubah mengikuti stok, ukuran, bahan, dan jumlah pesanan. Price list di website menjadi acuan awal.</p></details>
+    </section>
+  </main>
+
+  <footer><b id="footerBrand">BagusBag Jakarta</b><span>Goodie bag, paper bag, dan tas spunbond premium.</span><a href="admin.html">Admin Panel</a></footer>
+
+  <button class="wa-float" id="waFloat" aria-label="Chat WhatsApp">WhatsApp</button>
+  <script src="data/products.js"></script><script src="app.js"></script>
+</body>
+</html>
