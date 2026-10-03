@@ -1,0 +1,47 @@
+export type SiteSettings = {
+  id?: string;
+  company_name: string;
+  tagline: string;
+  about: string;
+  hero_title: string;
+  hero_subtitle: string;
+  hero_image_url: string;
+  hero_video_url: string;
+  address: string;
+  google_maps_url: string;
+  whatsapp_number: string;
+  whatsapp_message: string;
+  payment_info: string;
+  updated_at?: string;
+};
+export type Product = {
+  id: string;
+  name: string;
+  slug: string;
+  category: 'Spunbond' | 'Paperbag' | 'Coolerbag';
+  description: string;
+  size: string;
+  price: number;
+  min_order: number;
+  stock_qty: number;
+  image_url: string;
+  is_customizable: boolean;
+  is_active: boolean;
+  sort_order: number;
+};
+export type BlogPost = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  cover_image_url: string;
+  category: string;
+  author: string;
+  meta_title: string;
+  meta_description: string;
+  is_published: boolean;
+  published_at: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
