@@ -22,6 +22,8 @@ export type SiteSettings = {
   promo_popup?: PromoPopup | null;
   /** Konten section Cara Pesan / Custom / FAQ (jsonb mentah dari DB; rapikan dengan normalizeSections). */
   page_sections?: unknown;
+  /** Checkout online (keranjang + pesanan). Kolom dibuat oleh supabase/orders.sql. */
+  checkout_enabled?: boolean;
   updated_at?: string;
 };
 
@@ -65,6 +67,7 @@ export type Product = {
   motifs: VariantOption[];
   /** Pilihan ukuran (mis. 25 × 35 cm, 30 × 40 cm). Kosong = pakai kolom `size` produk saja. */
   sizes: VariantOption[];
+  updated_at?: string;
 };
 
 export type BlogPost = {

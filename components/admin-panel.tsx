@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { NavLink, Product, SiteSettings } from '@/lib/types';
-import { LogOut, Save, Plus, Trash2, Upload, Settings, Package, Image as ImageIcon, ExternalLink, FileText, ChevronUp, ChevronDown, LayoutTemplate } from 'lucide-react';
+import { LogOut, Save, Plus, Trash2, Upload, Settings, Package, Image as ImageIcon, ExternalLink, FileText, ChevronUp, ChevronDown, LayoutTemplate, ClipboardList } from 'lucide-react';
 import BlogAdmin from '@/components/blog-admin';
+import OrdersAdmin from '@/components/orders-admin';
 import VariantEditor from '@/components/variant-editor';
 import { IMAGE_EXT, MAX_UPLOAD_BYTES, safeUrl, slugify, toInt } from '@/lib/safe';
 import { compressImage, formatBytes } from '@/lib/compress-image';
@@ -31,10 +32,13 @@ function explain(err: unknown): string {
   return msg || 'Terjadi kesalahan yang tidak diketahui.';
 }
 
+/** Minta server membuat ulang halaman publik yang di-cache, supaya perubahan langsung tampil. */
+export const refreshSite = () => { fetch('/api/revalidate', { method: 'POST' }).catch(() => {}); };
+
 const NAV_SUGGESTIONS = ['/#produk', '/#custom', '/#about', '/#faq', '/#kontak', '/blog'];
 
 export default function AdminPanel() {
-  const [tab, setTab] = useState<'site' | 'pages' | 'products' | 'blog'>('site');
+  const [tab, setTab] = useState<'orders' | 'site' | 'pages' | 'products' | 'blog'>('orders');
   const [settings, setSettings] = useState<SiteSettings>(demoSettings);
   const [products, setProducts] = useState<Product[]>([]);
   const [posts, setPosts] = useState<{ slug: string; title: string }[]>([]);
@@ -129,7 +133,7 @@ export default function AdminPanel() {
       if (error) return notify(`Gagal menyimpan: ${explain(error)}`, 'error');
       if (!data) return notify('Gagal menyimpan: database tidak mengubah data apa pun. Pastikan akun ini terdaftar sebagai admin (security.sql).', 'error');
       setSettings({ ...clean, id: data.id ?? clean.id, nav_links: navLinks, promo_popup: promo });
-      notify('Pengaturan website tersimpan dan sudah tampil di website.', 'success');
+      refreshSite(); notify('Pengaturan website tersimpan dan sudah tampil di website.', 'success');
     } catch (e) { notify(`Gagal menyimpan: ${explain(e)}`, 'error'); }
     finally { setBusy(null); }
   }
@@ -146,7 +150,7 @@ export default function AdminPanel() {
       if (error) return notify(`Gagal menyimpan konten halaman: ${explain(error)}`, 'error');
       if (!data?.length) return notify('Gagal menyimpan: database tidak mengubah data apa pun. Pastikan akun ini terdaftar sebagai admin (security.sql).', 'error');
       setSections(clean); setSectionsDirty(false);
-      notify('Konten halaman tersimpan dan sudah tampil di website.', 'success');
+      refreshSite(); notify('Konten halaman tersimpan dan sudah tampil di website.', 'success');
     } catch (e) { notify(`Gagal menyimpan konten halaman: ${explain(e)}`, 'error'); }
     finally { setBusy(null); }
   }
@@ -165,7 +169,7 @@ export default function AdminPanel() {
       const { data, error } = await supabase.from('products').upsert(row).select('id');
       if (error) return notify(`Gagal menyimpan produk "${row.name}": ${explain(error)}`, 'error');
       if (!data?.length) return notify(`Produk "${row.name}" tidak tersimpan: database tidak mengubah data apa pun. Pastikan akun ini terdaftar sebagai admin.`, 'error');
-      patch(p.id, row); clean_(p.id); notify(`Produk "${row.name}" tersimpan dan sudah tampil di website.`, 'success');
+      patch(p.id, row); clean_(p.id); refreshSite(); notify(`Produk "${row.name}" tersimpan dan sudah tampil di website.`, 'success');
     } catch (e) { notify(`Gagal menyimpan produk: ${explain(e)}`, 'error'); }
     finally { setBusy(null); }
   }
@@ -177,7 +181,7 @@ export default function AdminPanel() {
       const { data, error } = await supabase.from('products').delete().eq('id', p.id).select('id');
       if (error) return notify(`Gagal menghapus produk: ${explain(error)}`, 'error');
       // Produk baru yang belum pernah disimpan memang tidak ada di database → tetap boleh dibuang dari daftar.
-      setProducts(x => x.filter(q => q.id !== p.id)); clean_(p.id);
+      setProducts(x => x.filter(q => q.id !== p.id)); clean_(p.id); refreshSite();
       notify(data?.length ? `Produk "${p.name}" dihapus.` : `Produk "${p.name}" dibuang dari daftar (belum pernah disimpan).`, 'success');
     } catch (e) { notify(`Gagal menghapus produk: ${explain(e)}`, 'error'); }
     finally { setBusy(null); }
@@ -200,6 +204,7 @@ export default function AdminPanel() {
       <aside>
         <div className="brand"><span className="brandmark">T</span><span>Tre Joy Ease <b>Admin</b></span></div>
         <div className="sidegroup">
+          <button className={tab === 'orders' ? 'sel' : ''} onClick={() => setTab('orders')}><ClipboardList /> Pesanan</button>
           <button className={tab === 'site' ? 'sel' : ''} onClick={() => setTab('site')}><Settings /> Website</button>
           <button className={tab === 'pages' ? 'sel' : ''} onClick={() => setTab('pages')}><LayoutTemplate /> Konten Halaman</button>
           <button className={tab === 'products' ? 'sel' : ''} onClick={() => setTab('products')}><Package /> Produk & Stok</button>
@@ -209,8 +214,8 @@ export default function AdminPanel() {
         <button className="logout" onClick={async () => { await supabase.auth.signOut(); location.href = '/admin/login'; }}><LogOut /> Logout</button>
       </aside>
       <section className="admincontent">
-        <header><div><span className="kicker">CONTROL CENTER</span><h1>{tab === 'site' ? 'Pengaturan Website' : tab === 'pages' ? 'Konten Halaman' : tab === 'blog' ? 'Artikel Blog' : 'Katalog Produk'}</h1></div></header>
-        {tab === 'blog' ? <BlogAdmin notify={notify} /> : tab === 'pages' ? (
+        <header><div><span className="kicker">CONTROL CENTER</span><h1>{tab === 'orders' ? 'Pesanan Masuk' : tab === 'site' ? 'Pengaturan Website' : tab === 'pages' ? 'Konten Halaman' : tab === 'blog' ? 'Artikel Blog' : 'Katalog Produk'}</h1></div></header>
+        {tab === 'orders' ? <OrdersAdmin supabase={supabase} notify={notify} /> : tab === 'blog' ? <BlogAdmin notify={notify} /> : tab === 'pages' ? (
           <SectionsAdmin sections={sections} onChange={s => { setSections(s); setSectionsDirty(true); }} upload={f => upload(f, 'sections', 'tombol "Simpan perubahan" di bawah')} onSave={saveSections} saving={busy === 'sections'} dirty={sectionsDirty} />
         ) : tab === 'site' ? (
           <div className="panel">

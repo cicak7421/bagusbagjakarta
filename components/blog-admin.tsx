@@ -50,7 +50,7 @@ export default function BlogAdmin({ notify }: { notify: Notify }) {
       const { data, error } = await supabase.from('blog_posts').upsert(row).select('id');
       if (error) return notify(error.message.includes('duplicate') ? 'Gagal menyimpan: slug sudah dipakai artikel lain.' : `Gagal menyimpan artikel: ${error.message}`, 'error');
       if (!data?.length) return notify('Artikel tidak tersimpan: database tidak mengubah data apa pun. Pastikan akun ini terdaftar sebagai admin (security.sql).', 'error');
-      notify(edit.is_published ? `Artikel "${row.title}" tersimpan dan terbit.` : `Draft "${row.title}" tersimpan.`, 'success');
+      fetch('/api/revalidate', { method: 'POST' }).catch(() => {}); notify(edit.is_published ? `Artikel "${row.title}" tersimpan dan terbit.` : `Draft "${row.title}" tersimpan.`, 'success');
       setEdit(row); setIsNew(false); load();
     } catch (e) { notify(`Gagal menyimpan artikel: ${e instanceof Error ? e.message : 'koneksi bermasalah'}`, 'error'); }
     finally { setSaving(false); }
@@ -62,7 +62,7 @@ export default function BlogAdmin({ notify }: { notify: Notify }) {
       const { data, error } = await supabase.from('blog_posts').delete().eq('id', id).select('id');
       if (error) return notify(`Gagal menghapus artikel: ${error.message}`, 'error');
       if (!data?.length) return notify('Artikel tidak terhapus: database tidak mengubah data apa pun. Pastikan akun ini terdaftar sebagai admin.', 'error');
-      setEdit(null); notify('Artikel dihapus.', 'success'); load();
+      setEdit(null); fetch('/api/revalidate', { method: 'POST' }).catch(() => {}); notify('Artikel dihapus.', 'success'); load();
     } catch (e) { notify(`Gagal menghapus artikel: ${e instanceof Error ? e.message : 'koneksi bermasalah'}`, 'error'); }
     finally { setSaving(false); }
   }

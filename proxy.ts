@@ -2,16 +2,19 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 /**
- * Gerbang /admin (Next.js 16: file "proxy" menggantikan "middleware").
- *  - Belum login            → /admin/login
- *  - Login tapi BUKAN admin → keluar & kembali ke /admin/login?denied=1
- *  - Halaman login          → tidak diredirect ke dirinya sendiri (bug lama: redirect loop)
- *  - Semua respons admin    → no-store, noindex
- * Penjagaan sebenarnya tetap ada di database (RLS + is_admin()); ini lapisan UX/defense-in-depth.
+ * Gerbang area yang butuh login (Next.js 16: file "proxy" menggantikan "middleware").
+ *
+ * /admin  : hanya user yang terdaftar di admin_users. Customer biasa ditolak.
+ * /akun, /checkout : hanya customer yang sudah login (kecuali halaman masuk/daftar/lupa password).
+ * Semua respons di area ini: no-store + noindex. Sesi login diperpanjang otomatis di sini.
+ * Penjagaan sebenarnya tetap ada di database (RLS); ini lapisan UX/defense-in-depth.
  */
+const PUBLIC_ACCOUNT_PAGES = new Set(['/akun/masuk', '/akun/daftar', '/akun/lupa-password']);
+
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const isLogin = pathname === '/admin/login';
+  const { pathname, search } = request.nextUrl;
+  const isAdminArea = pathname === '/admin' || pathname.startsWith('/admin/');
+  const isAdminLogin = pathname === '/admin/login';
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
@@ -20,9 +23,13 @@ export async function proxy(request: NextRequest) {
     res.headers.set('X-Robots-Tag', 'noindex, nofollow');
     return res;
   };
+  const to = (path: string) => harden(NextResponse.redirect(new URL(path, request.url)));
 
-  // Env belum diisi → jangan pernah membuka admin.
-  if (!url || !key) return isLogin ? harden(NextResponse.next()) : harden(NextResponse.redirect(new URL('/admin/login', request.url)));
+  // Env belum diisi → jangan pernah membuka area tertutup.
+  if (!url || !key) {
+    if (isAdminArea) return isAdminLogin ? harden(NextResponse.next()) : to('/admin/login');
+    return PUBLIC_ACCOUNT_PAGES.has(pathname) ? harden(NextResponse.next()) : to('/');
+  }
 
   let response = NextResponse.next({ request });
   const supabase = createServerClient(url, key, {
@@ -38,22 +45,20 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser(); // getUser() memverifikasi token ke server Auth
 
+  if (!isAdminArea) {
+    if (!user && !PUBLIC_ACCOUNT_PAGES.has(pathname)) return to(`/akun/masuk?next=${encodeURIComponent(pathname + search)}`);
+    return harden(response);
+  }
+
   let isAdmin = false;
   if (user) {
     const { data } = await supabase.from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle();
     isAdmin = !!data;
   }
-
-  if (isLogin) {
-    if (user && isAdmin) return harden(NextResponse.redirect(new URL('/admin', request.url)));
-    return harden(response);
-  }
-  if (!user) return harden(NextResponse.redirect(new URL('/admin/login', request.url)));
-  if (!isAdmin) {
-    const res = NextResponse.redirect(new URL('/admin/login?denied=1', request.url));
-    return harden(res);
-  }
+  if (isAdminLogin) return user && isAdmin ? to('/admin') : harden(response);
+  if (!user) return to('/admin/login');
+  if (!isAdmin) return to('/admin/login?denied=1');
   return harden(response);
 }
 
-export const config = { matcher: ['/admin', '/admin/:path*'] };
+export const config = { matcher: ['/admin', '/admin/:path*', '/akun', '/akun/:path*', '/checkout'] };

@@ -3,7 +3,7 @@
  * supaya dikirim sebagai AVIF/WebP dengan ukuran sesuai layar, bukan file asli yang besar.
  * Host harus sama dengan `images.remotePatterns` di next.config.mjs.
  */
-const HOSTS = new Set<string>(['images.unsplash.com']);
+const HOSTS = new Set<string>(['images.unsplash.com', 'i.imgur.com']);
 try {
   if (process.env.NEXT_PUBLIC_SUPABASE_URL) HOSTS.add(new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname);
 } catch { /* env tidak valid → abaikan */ }

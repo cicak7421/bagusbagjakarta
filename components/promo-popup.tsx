@@ -33,6 +33,7 @@ export function PromoModal({ promo, onClose, imgSize }: { promo: Promo; onClose:
             alt={promo.title || 'Promo'}
             {...(imgSize ? { width: imgSize.w, height: imgSize.h } : {})}
             decoding="async"
+            onError={e => { e.currentTarget.style.display = 'none'; }}
           />
         )}
         {hasBody && (

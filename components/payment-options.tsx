@@ -1,20 +1,17 @@
-import { Clock, MessageCircle, ShieldCheck } from 'lucide-react';
+import { MessageCircle, QrCode } from 'lucide-react';
 import { paymentMethods } from '@/lib/payments';
 
-/** Daftar metode bayar. Mitra Trans tampil sebagai "Segera hadir" (nonaktif). */
-export function PaymentOptions({ compact = false }: { compact?: boolean }) {
+/** Daftar metode bayar. QRIS hanya ditampilkan kalau checkout online aktif. */
+export function PaymentOptions({ compact = false, qris = false }: { compact?: boolean; qris?: boolean }) {
   return (
     <ul className={compact ? 'paylist compact' : 'paylist'} aria-label="Metode pembayaran">
-      {paymentMethods.map(m => (
-        <li key={m.id} className={m.status === 'coming_soon' ? 'payitem soon' : 'payitem'}>
-          <span className="payicon">{m.id === 'whatsapp' ? <MessageCircle size={18} /> : <ShieldCheck size={18} />}</span>
+      {paymentMethods.filter(m => qris || m.id !== 'qris').map(m => (
+        <li key={m.id} className="payitem">
+          <span className="payicon">{m.id === 'whatsapp' ? <MessageCircle size={18} /> : <QrCode size={18} />}</span>
           <span className="paytext">
             <b>{m.name}</b>
             {!compact && <small>{m.description}</small>}
           </span>
-          {m.status === 'coming_soon'
-            ? <em className="soonbadge"><Clock size={12} /> Segera hadir</em>
-            : <em className="livebadge">Aktif</em>}
         </li>
       ))}
     </ul>

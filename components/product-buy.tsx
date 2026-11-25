@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Clock, Minus, Plus, MessageCircle, Bell } from 'lucide-react';
+import { Check, Minus, Plus, MessageCircle, Bell, ShoppingBag } from 'lucide-react';
 import type { Product, SiteSettings, VariantOption } from '@/lib/types';
 import { money } from '@/lib/format';
 import { waLink } from '@/lib/wa';
 import { safeUrl, toInt } from '@/lib/safe';
 import { effectiveStock, isLight, unitPrice } from '@/lib/variants';
-import { directPaymentEnabled } from '@/lib/payments';
+import { addToCart } from '@/lib/cart';
 import { Swatch } from '@/components/swatch';
 import { PaymentOptions } from '@/components/payment-options';
 
@@ -17,7 +17,7 @@ function firstAvailable(list: VariantOption[], p: Product) {
   return list.length ? Math.max(0, i) : -1;
 }
 
-export default function ProductBuy({ product: p, settings }: { product: Product; settings: SiteSettings }) {
+export default function ProductBuy({ product: p, settings, checkout = false, qris = false }: { product: Product; settings: SiteSettings; checkout?: boolean; qris?: boolean }) {
   const [ci, setCi] = useState(() => firstAvailable(p.colors, p));
   const [mi, setMi] = useState(() => firstAvailable(p.motifs, p));
   const [si, setSi] = useState(() => firstAvailable(p.sizes ?? [], p));
@@ -99,9 +99,29 @@ export default function ProductBuy({ product: p, settings }: { product: Product;
 
   const stockLabel = soldOut ? 'Stok habis' : `${stock.toLocaleString('id-ID')} pcs tersedia`;
 
+  // Checkout online hanya untuk jumlah yang stoknya siap; di atas stok tetap lewat WhatsApp (pre-order)
+  const canCart = checkout && !soldOut && !over && unit > 0;
+  const [added, setAdded] = useState<'' | 'ok' | 'full'>('');
+  const put = () => addToCart({
+    product_id: p.id, slug: p.slug, name: p.name, category: p.category, image: shownImg || safeUrl(p.image_url),
+    color: color?.name ?? null, motif: motif?.name ?? null, size: size?.name ?? null, unit, qty, min_order: p.min_order,
+  });
+  const addCart = () => { setAdded(put() ? 'ok' : 'full'); };
+  const buyNow = () => { if (put()) location.href = '/checkout'; else setAdded('full'); };
+
+  const waBtn = <a className={canCart ? 'outline full' : 'primary full'} href={orderHref} target="_blank" rel="noopener noreferrer">{canCart ? 'Tanya / pesan via WhatsApp' : 'Pesan via WhatsApp'} <MessageCircle size={18} /></a>;
   const cta = soldOut
     ? <button className="primary full disabledbtn" disabled aria-disabled="true">Stok habis</button>
-    : <a className="primary full" href={orderHref} target="_blank" rel="noopener noreferrer">Pesan via WhatsApp <MessageCircle size={18} /></a>;
+    : canCart ? (
+      <>
+        <div className="cartbtns">
+          <button type="button" className="primary" onClick={buyNow}>Beli sekarang</button>
+          <button type="button" className="outline" onClick={addCart}><ShoppingBag size={18} /> Keranjang</button>
+        </div>
+        {added && <p className={added === 'ok' ? 'addednote' : 'addednote warn'} role="status">{added === 'ok' ? <>Masuk keranjang. <a href="/keranjang">Lihat keranjang</a></> : 'Keranjang penuh (maksimal 20 jenis barang).'}</p>}
+        {waBtn}
+      </>
+    ) : waBtn;
 
   return (
     <div className="pdpgrid">
@@ -132,7 +152,7 @@ export default function ProductBuy({ product: p, settings }: { product: Product;
 
         <div className="pricebox">
           <div className="modalprice">{money(unit)} <small>/pcs</small></div>
-          <div className="pricehint">{qty.toLocaleString('id-ID')} pcs ≈ <b>{money(total)}</b> <span>(estimasi, harga final dikonfirmasi admin)</span></div>
+          <div className="pricehint">{qty.toLocaleString('id-ID')} pcs ≈ <b>{money(total)}</b> <span>{canCart ? '(belum termasuk ongkos kirim)' : '(estimasi, harga final dikonfirmasi admin)'}</span></div>
         </div>
 
         {p.colors.length > 0 && (
@@ -207,14 +227,11 @@ export default function ProductBuy({ product: p, settings }: { product: Product;
               {p.is_customizable && <a className="remind" href={customHref} target="_blank" rel="noopener noreferrer">Tanya produksi custom</a>}
             </div>
           )}
-          {!directPaymentEnabled && (
-            <button className="paysoon" disabled aria-disabled="true"><Clock size={16} /> Bayar langsung via Mitra Trans <em>Segera hadir</em></button>
-          )}
         </div>
 
         <details className="paybox">
           <summary>Metode pembayaran</summary>
-          <PaymentOptions />
+          <PaymentOptions qris={qris} />
           <p className="pdpnote">{settings.payment_info}</p>
         </details>
       </div>
@@ -233,6 +250,7 @@ export default function ProductBuy({ product: p, settings }: { product: Product;
         </div>
         {soldOut
           ? <a className="primary remind-btn" href={notifyHref} target="_blank" rel="noopener noreferrer"><Bell size={16} /> Ingatkan saya</a>
+          : canCart ? <button type="button" className="primary" onClick={buyNow}>Beli sekarang</button>
           : <a className="primary" href={orderHref} target="_blank" rel="noopener noreferrer">Pesan <MessageCircle size={16} /></a>}
       </div>
     </div>

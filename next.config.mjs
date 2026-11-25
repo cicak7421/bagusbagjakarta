@@ -31,6 +31,7 @@ const nextConfig = {
     remotePatterns: [
       ...(supabaseHost ? [{ protocol: 'https', hostname: new URL(supabaseHost).hostname }] : []),
       { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'i.imgur.com' },
     ],
   },
   // Sisipkan CSS langsung di HTML → tidak ada request CSS yang memblokir render

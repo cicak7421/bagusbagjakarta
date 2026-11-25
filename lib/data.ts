@@ -1,11 +1,14 @@
-import { connection } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { cache } from 'react';
+import { createPublicClient } from '@/lib/supabase/public';
 import type { Product, SiteSettings, VariantOption } from '@/lib/types';
 import { normalizeProduct } from '@/lib/variants';
 import { demoSettings } from '@/lib/demo-settings';
 import { normalizeSections } from '@/lib/sections';
 
 export { demoSettings };
+
+/** Halaman publik di-cache lalu diperbarui otomatis tiap N detik (dan langsung saat admin menyimpan). */
+export const REVALIDATE_SECONDS = 300;
 
 const c = (name: string, hex: string, extra: Partial<VariantOption> = {}): VariantOption => ({ name, hex, ...extra });
 const m = (name: string, pattern: VariantOption['pattern'], hex: string, extra: Partial<VariantOption> = {}): VariantOption => ({ name, pattern, hex, ...extra });
@@ -40,24 +43,31 @@ const demoProducts: Product[] = [
   },
 ];
 
-export async function getData() {
-  // Wajib dinamis: tanpa ini, try/catch di bawah menelan sinyal "halaman dinamis" dari cookies(), sehingga Next
-  // membekukan halaman dengan data lama/demo (perubahan di admin tidak pernah muncul di website).
-  await connection();
-  let settings = demoSettings;
+/**
+ * Data publik untuk storefront. Dibungkus cache() supaya generateMetadata + halaman
+ * cukup satu kali query per render. Tidak memakai cookies → halaman bisa statis/ISR.
+ * `live` = false artinya database tidak terjangkau dan yang tampil adalah data demo
+ * (checkout otomatis dimatikan supaya tidak ada pesanan untuk produk demo).
+ */
+export const getData = cache(async () => {
+  let settings: SiteSettings = demoSettings;
   let products = demoProducts;
+  let live = false;
   try {
-    const supabase = await createClient();
-    const [s, p] = await Promise.all([
-      supabase.from('site_settings').select('*').limit(1).maybeSingle(),
-      supabase.from('products').select('*').eq('is_active', true).order('sort_order'),
-    ]);
-    if (s.data) settings = { ...demoSettings, ...s.data };
-    if (p.data?.length) products = p.data.map(row => normalizeProduct(row as Record<string, unknown>));
+    const supabase = createPublicClient();
+    if (supabase) {
+      const [s, p] = await Promise.all([
+        supabase.from('site_settings').select('*').limit(1).maybeSingle(),
+        supabase.from('products').select('*').eq('is_active', true).order('sort_order'),
+      ]);
+      if (s.data) settings = { ...demoSettings, ...s.data };
+      if (p.data?.length) { products = p.data.map(row => normalizeProduct(row as Record<string, unknown>)); live = true; }
+    }
   } catch {
-    /* Supabase belum di-setup → tampilkan data demo */
+    /* Supabase belum di-setup / sedang gangguan → tampilkan data demo */
   }
-  // Konten Cara Pesan / Custom / FAQ: dari admin, atau default kalau belum diatur
   const sections = normalizeSections(settings.page_sections);
-  return { settings, products, sections };
-}
+  // Checkout online aktif hanya kalau database pesanan sudah dipasang (kolom checkout_enabled dari supabase/orders.sql)
+  const checkoutEnabled = live && settings.checkout_enabled === true;
+  return { settings, products, sections, checkoutEnabled };
+});

@@ -1,14 +1,14 @@
-import { connection } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { cache } from 'react';
+import { createPublicClient } from '@/lib/supabase/public';
 import type { BlogPost } from '@/lib/types';
 
-export async function getPosts(): Promise<BlogPost[]> {
-  await connection(); // lihat catatan di lib/data.ts
+export const getPosts = cache(async (): Promise<BlogPost[]> => {
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
+    if (!supabase) return [];
     const { data } = await supabase.from('blog_posts').select('*').eq('is_published', true).lte('published_at', new Date().toISOString()).order('published_at', { ascending: false });
     return data ?? [];
   } catch { return []; }
-}
+});
 export const readingTime = (text: string) => Math.max(1, Math.round(text.trim().split(/\s+/).length / 200));
-export const fmtDate = (iso: string | null) => iso ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'long' }).format(new Date(iso)) : '';
+export const fmtDate = (iso: string | null) => iso ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'long', timeZone: 'Asia/Jakarta' }).format(new Date(iso)) : '';

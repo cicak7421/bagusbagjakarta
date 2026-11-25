@@ -11,6 +11,9 @@ import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 
 type Props = { params: Promise<{ slug: string }> };
 
+export const revalidate = 300;
+export const generateStaticParams = async () => [];
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = (await getPosts()).find(p => p.slug === slug);
@@ -26,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPost({ params }: Props) {
   const { slug } = await params;
-  const [{ settings }, posts] = await Promise.all([getData(), getPosts()]);
+  const [{ settings, checkoutEnabled }, posts] = await Promise.all([getData(), getPosts()]);
   const post = posts.find(p => p.slug === slug);
   if (!post) notFound();
   const more = posts.filter(p => p.id !== post.id).slice(0, 3);
@@ -45,7 +48,7 @@ export default async function BlogPost({ params }: Props) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-      <SiteHeader settings={settings} />
+      <SiteHeader settings={settings} checkout={checkoutEnabled} />
       <main className="container pdp">
         <nav className="crumbs" aria-label="Breadcrumb"><a href="/">Beranda</a><ChevronRight size={14} /><a href="/blog">Blog</a><ChevronRight size={14} /><span aria-current="page">{post.title}</span></nav>
         <article className="article">
@@ -68,7 +71,7 @@ export default async function BlogPost({ params }: Props) {
           </section>
         )}
       </main>
-      <SiteFooter settings={settings} />
+      <SiteFooter settings={settings} checkout={checkoutEnabled} />
     </>
   );
 }

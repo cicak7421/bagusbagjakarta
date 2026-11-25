@@ -1,5 +1,10 @@
 import type { MetadataRoute } from 'next';
 import { siteUrl } from '@/lib/site';
+
 export default function robots(): MetadataRoute.Robots {
-  return { rules: { userAgent: '*', allow: '/', disallow: ['/admin'] }, sitemap: `${siteUrl}/sitemap.xml` };
+  return {
+    rules: { userAgent: '*', allow: '/', disallow: ['/admin', '/akun', '/checkout', '/keranjang', '/api/', '/auth/'] },
+    sitemap: `${siteUrl}/sitemap.xml`,
+    host: siteUrl,
+  };
 }
