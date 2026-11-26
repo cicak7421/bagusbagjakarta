@@ -67,6 +67,10 @@ export type Product = {
   motifs: VariantOption[];
   /** Pilihan ukuran (mis. 25 × 35 cm, 30 × 40 cm). Kosong = pakai kolom `size` produk saja. */
   sizes: VariantOption[];
+  /** Kode SKU internal (mis. SP34). Kolom dari supabase/catalog-sku.sql. */
+  sku?: string | null;
+  /** Foto tambahan untuk galeri (selain image_url). */
+  images?: string[];
   updated_at?: string;
 };
 

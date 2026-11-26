@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const catalogDate = newest([settings.updated_at, ...products.map(p => p.updated_at)]);
   return [
     { url: siteUrl, lastModified: catalogDate, changeFrequency: 'weekly', priority: 1 },
+    { url: `${siteUrl}/produk`, lastModified: catalogDate, changeFrequency: 'weekly', priority: 0.9 },
     ...Object.entries(categories).map(([slug, c]) => ({
       url: `${siteUrl}/kategori/${slug}`, lastModified: newest(products.filter(p => p.category === c.name).map(p => p.updated_at)) ?? catalogDate, changeFrequency: 'weekly' as const, priority: 0.9,
     })),

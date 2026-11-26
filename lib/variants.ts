@@ -49,7 +49,15 @@ export function normalizeProduct(p: Record<string, unknown>): Product {
     colors: normalizeOptions(p.colors),
     motifs: normalizeOptions(p.motifs),
     sizes: normalizeSizes(p.sizes),
+    sku: typeof p.sku === 'string' && p.sku.trim() ? p.sku.trim().slice(0, 24) : null,
+    images: normalizeImages(p.images),
   };
+}
+
+/** Foto galeri: hanya URL http(s), maksimal 8. */
+export function normalizeImages(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map(u => safeUrl(u)).filter(Boolean).slice(0, 8);
 }
 
 /**

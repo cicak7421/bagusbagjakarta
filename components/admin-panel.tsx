@@ -9,7 +9,7 @@ import VariantEditor from '@/components/variant-editor';
 import { IMAGE_EXT, MAX_UPLOAD_BYTES, safeUrl, slugify, toInt } from '@/lib/safe';
 import { compressImage, formatBytes } from '@/lib/compress-image';
 import { demoSettings } from '@/lib/demo-settings';
-import { normalizeOptions, normalizeSizes } from '@/lib/variants';
+import { normalizeImages, normalizeOptions, normalizeSizes } from '@/lib/variants';
 import { MAX_NAV_LINKS, normalizeNavLinks, normalizeNavUrl } from '@/lib/nav';
 import { Toasts, useToasts } from '@/components/toast';
 import { DEFAULT_PROMO, normalizePromo, promoHasContent } from '@/lib/promo';
@@ -47,6 +47,8 @@ export default function AdminPanel() {
   const [dirty, setDirty] = useState<Set<string>>(new Set());
   const [sections, setSections] = useState<PageSections>(() => defaultSections());
   const [sectionsDirty, setSectionsDirty] = useState(false);
+  const [pq, setPq] = useState('');
+  const [showAll, setShowAll] = useState(false);
   const { items: toasts, notify, dismiss } = useToasts();
   const [supabase] = useState(() => createClient());
 
@@ -66,7 +68,7 @@ export default function AdminPanel() {
           setSettings({ ...demoSettings, ...(siteRow as unknown as SiteSettings), nav_links: normalizeNavLinks(siteRow.nav_links), promo_popup: normalizePromo(siteRow.promo_popup) });
           setSections(normalizeSections(rawSections));
         }
-        if (p.data) setProducts(p.data.map(r => ({ ...r, colors: normalizeOptions(r.colors), motifs: normalizeOptions(r.motifs), sizes: normalizeSizes(r.sizes) })));
+        if (p.data) setProducts(p.data.map(r => ({ ...r, colors: normalizeOptions(r.colors), motifs: normalizeOptions(r.motifs), sizes: normalizeSizes(r.sizes), images: normalizeImages(r.images) })));
         if (b.data) setPosts(b.data);
       } catch (e) { notify(`Gagal memuat data: ${explain(e)}`, 'error'); }
     })();
@@ -163,6 +165,7 @@ export default function AdminPanel() {
       ...p, slug, name: p.name.trim(),
       price: Math.max(0, Number(p.price) || 0), stock_qty: toInt(p.stock_qty), min_order: toInt(p.min_order, 1),
       image_url: safeUrl(p.image_url), colors: normalizeOptions(p.colors), motifs: normalizeOptions(p.motifs), sizes: normalizeSizes(p.sizes), updated_at: new Date().toISOString(),
+      sku: p.sku?.trim() ? p.sku.trim().toUpperCase().slice(0, 24) : null, images: normalizeImages(p.images),
     };
     setBusy(`product:${p.id}`);
     try {
@@ -197,7 +200,7 @@ export default function AdminPanel() {
   const patchLink = (i: number, d: Partial<NavLink>) => setLinks(links.map((l, j) => (j === i ? { ...l, ...d } : l)));
   const moveLink = (i: number, dir: -1 | 1) => { const j = i + dir; if (j < 0 || j >= links.length) return; const n = [...links]; [n[i], n[j]] = [n[j], n[i]]; setLinks(n); };
 
-  const add = () => setProducts(x => [...x, { id: crypto.randomUUID(), name: 'Produk Baru', slug: 'produk-baru-' + Date.now(), category: 'Spunbond', description: 'Deskripsi produk.', size: '25 × 35 cm', price: 0, min_order: 100, stock_qty: 0, image_url: '', is_customizable: true, is_active: false, sort_order: x.length + 1, colors: [], motifs: [], sizes: [] }]);
+  const add = () => setProducts(x => [...x, { id: crypto.randomUUID(), name: 'Produk Baru', slug: 'produk-baru-' + Date.now(), category: 'Spunbond', description: 'Deskripsi produk.', size: '25 × 35 cm', price: 0, min_order: 100, stock_qty: 0, image_url: '', is_customizable: true, is_active: false, sort_order: 0, colors: [], motifs: [], sizes: [], sku: null, images: [] }, ...x]);
 
   return (
     <main className="admin">
@@ -272,13 +275,18 @@ export default function AdminPanel() {
           </div>
         ) : (
           <div>
-            <div className="toolbar"><button className="primary" onClick={add}><Plus size={17} /> Tambah produk</button></div>
+            <div className="toolbar">
+              <input className="prodsearch" type="search" placeholder="Cari nama atau kode SKU…" value={pq} onChange={e => setPq(e.target.value)} aria-label="Cari produk" />
+              <button className="primary" onClick={add}><Plus size={17} /> Tambah produk</button>
+            </div>
+            <p className="hint" style={{ margin: '0 0 12px' }}>{products.length} produk, {products.filter(x => x.is_active).length} tampil di website. Produk dengan harga 0 tampil sebagai &quot;Tanya harga&quot;.</p>
             <div className="productadmin">
-              {products.map(p => (
+              {(() => { const w = pq.trim().toLowerCase(); const list = products.filter(x => !w || `${x.name} ${x.sku ?? ''} ${x.slug}`.toLowerCase().includes(w) || dirty.has(x.id)); return showAll || w ? list : list.slice(0, 12); })().map(p => (
                 <div className="productrow" key={p.id}>
                   <div className="thumb">{p.image_url ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={safeUrl(p.image_url)} alt="" /> : <ImageIcon />}</div>
                   <div className="fields">
                     <label className="f2">Nama<input value={p.name} onChange={e => patch(p.id, { name: e.target.value })} /></label>
+                    <label>Kode SKU<input value={p.sku ?? ''} maxLength={24} placeholder="SP34" onChange={e => patch(p.id, { sku: e.target.value })} /></label>
                     <label>Kategori<select value={p.category} onChange={e => patch(p.id, { category: e.target.value as Product['category'] })}><option>Spunbond</option><option>Paperbag</option><option>Coolerbag</option></select></label>
                     <label>Ukuran<input value={p.size} onChange={e => patch(p.id, { size: e.target.value })} /></label>
                     <label>Harga/pcs<input type="number" min={0} value={p.price} onChange={e => patch(p.id, { price: +e.target.value })} /></label>
@@ -286,6 +294,20 @@ export default function AdminPanel() {
                     <label>MOQ<input type="number" min={1} value={p.min_order} onChange={e => patch(p.id, { min_order: +e.target.value })} /></label>
                     <label className="f3">Slug (URL)<input value={p.slug} onChange={e => patch(p.id, { slug: e.target.value })} /></label>
                     <label className="f3">Image URL<input placeholder="https://…" value={p.image_url} onChange={e => patch(p.id, { image_url: e.target.value })} /></label>
+                    <div className="f3 galedit">
+                      <span>Foto galeri ({(p.images ?? []).length}/8)</span>
+                      <div className="galrow">
+                        {(p.images ?? []).map((u, gi) => (
+                          <span className="galitem" key={u}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={safeUrl(u)} alt="" loading="lazy" />
+                            <button type="button" title="Jadikan foto utama" onClick={() => patch(p.id, { image_url: u, images: [p.image_url, ...(p.images ?? []).filter((_, j) => j !== gi)].filter(Boolean) })}>★</button>
+                            <button type="button" className="danger" title="Hapus foto" onClick={() => patch(p.id, { images: (p.images ?? []).filter((_, j) => j !== gi) })}>×</button>
+                          </span>
+                        ))}
+                        {(p.images ?? []).length < 8 && <label className="galadd"><Upload size={15} /> Tambah<input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" onChange={async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; const url = await upload(f, 'products'); if (url) patch(p.id, { images: [...(p.images ?? []), url] }); }} /></label>}
+                      </div>
+                    </div>
                     <label className="f3">Deskripsi<textarea value={p.description} onChange={e => patch(p.id, { description: e.target.value })} /></label>
                     <div className="f3 toggles">
                       <label className="check"><input type="checkbox" checked={p.is_active} onChange={e => patch(p.id, { is_active: e.target.checked })} /> Tampil di website</label>
@@ -305,6 +327,7 @@ export default function AdminPanel() {
                 </div>
               ))}
             </div>
+            {!showAll && !pq.trim() && products.length > 12 && <div className="toolbar" style={{ justifyContent: 'center', marginTop: 14 }}><button className="navadd" onClick={() => setShowAll(true)}>Tampilkan semua {products.length} produk</button></div>}
           </div>
         )}
       </section>
