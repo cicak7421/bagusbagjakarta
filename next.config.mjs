@@ -37,6 +37,18 @@ const nextConfig = {
   // CSS sengaja TIDAK disisipkan ke HTML (experimental.inlineCss mati): lembar gaya toko besar dan dipakai
   // semua halaman, jadi lebih hemat sebagai file statis yang di-cache sekali daripada terulang di tiap dokumen
   // (dengan inlineCss tiap halaman membawa CSS dua kali: di <style> dan di payload RSC).
+  // Domain lama dialihkan permanen ke domain resmi supaya Google hanya mengindeks satu alamat.
+  // /api tidak ikut dialihkan (webhook pembayaran tidak mengikuti redirect).
+  async redirects() {
+    return [
+      {
+        source: '/:path((?!api/).*)',
+        has: [{ type: 'host', value: 'bagusbagjakarta.vercel.app' }],
+        destination: 'https://trejoyease.vercel.app/:path',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
