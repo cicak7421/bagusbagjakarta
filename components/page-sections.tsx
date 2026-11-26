@@ -49,6 +49,7 @@ export function HowtoSection({ s }: { s: HowSection }) {
         <MediaLayout image={s.image} align="center" className="secml">
           {(s.title || s.subtitle) && (
             <div className="howhead">
+              <p className="seclabel">Cara pesan</p>
               {s.title && <h2 id="howto-title">{s.title}</h2>}
               {s.subtitle && <p>{s.subtitle}</p>}
             </div>
@@ -60,7 +61,7 @@ export function HowtoSection({ s }: { s: HowSection }) {
                 {c.title && <h3>{c.title}</h3>}
                 {c.text && <p>{c.text}</p>}
                 {c.link_label && c.link_url && (
-                  <a href={c.link_url} {...(isExternal(c.link_url) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{c.link_label} <ChevronRight size={16} /></a>
+                  <a href={c.link_url} {...(isExternal(c.link_url) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{c.link_label} <ChevronRight size={16} aria-hidden="true" /></a>
                 )}
               </MediaLayout>
             ))}
@@ -78,10 +79,11 @@ export function CustomSectionView({ s, settings }: { s: CustomSection; settings:
         <MediaLayout image={s.image} align="center" className="secml">
           <div className="cz">
             <div className="czhead customhead">
+              <p className="seclabel">Custom</p>
               {s.title && <h2 id="custom-title">{s.title}</h2>}
               {s.text && <p>{s.text}</p>}
-              {s.checks.length > 0 && <ul className="checks">{s.checks.map(t => <li key={t}><Check size={16} />{t}</li>)}</ul>}
-              <a className="primary czcta" href={waLink(settings)} target="_blank" rel="noopener noreferrer">Konsultasi custom via WhatsApp <MessageCircle size={18} /></a>
+              {s.checks.length > 0 && <ul className="checks">{s.checks.map(t => <li key={t}><Check size={16} aria-hidden="true" />{t}</li>)}</ul>}
+              <a className="primary czcta" href={waLink(settings)} target="_blank" rel="noopener noreferrer">Konsultasi custom via WhatsApp <MessageCircle size={18} aria-hidden="true" /></a>
             </div>
             {s.steps.length > 0 && (
               <ol className="steps czsteps">
@@ -113,6 +115,7 @@ export function FaqSectionView({ s, settings }: { s: FaqSection; settings: Pick<
           <div className="faqgrid">
             {(s.title || s.subtitle) && (
               <div className="faqhead">
+                <p className="seclabel">Bantuan</p>
                 {s.title && <h2 id="faq-title">{s.title}</h2>}
                 {s.subtitle && <p>{s.subtitle}</p>}
               </div>

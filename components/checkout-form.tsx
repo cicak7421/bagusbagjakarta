@@ -1,20 +1,25 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Lock, ShoppingBag } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ChevronDown, Info, Lock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { cartTotal, clearCart, useCart } from '@/lib/cart';
 import { money } from '@/lib/format';
 import { optimizedSrc } from '@/lib/img';
 import { safeUrl } from '@/lib/safe';
 import { isOrderNumber, QRIS_MAX_AMOUNT } from '@/lib/orders';
-import { lineLabel } from '@/components/cart-view';
+import { CartEmpty, cartPcs, lineLabel } from '@/components/cart-view';
+import { PaymentOptions } from '@/components/payment-options';
 import type { Profile } from '@/components/account-view';
 
 /**
  * Form checkout. Yang dikirim ke server hanya: id produk, pilihan varian, jumlah, dan alamat.
  * Harga, stok, dan total dihitung ulang di database (fungsi create_order), jadi tidak bisa diakali dari browser.
+ *
+ * `qris`     : QRIS aktif di server (hanya memengaruhi daftar metode bayar yang ditampilkan).
+ * `shipNote` : info ongkos kirim dari halaman server (<ShipNote />).
+ * `art`      : ilustrasi keadaan kosong dari halaman server (<EmptyArt />).
  */
-export default function CheckoutForm({ profile, email }: { profile: Profile; email: string }) {
+export default function CheckoutForm({ profile, email, qris = false, shipNote, art }: { profile: Profile; email: string; qris?: boolean; shipNote?: React.ReactNode; art?: React.ReactNode }) {
   const items = useCart();
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
@@ -23,6 +28,7 @@ export default function CheckoutForm({ profile, email }: { profile: Profile; ema
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
   const total = cartTotal(items);
+  const pcs = cartPcs(items);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -49,55 +55,97 @@ export default function CheckoutForm({ profile, email }: { profile: Profile; ema
     } catch { setErr('Tidak bisa terhubung ke server. Cek koneksi internet lalu coba lagi.'); setBusy(false); }
   }
 
-  if (!ready) return <div className="empty" aria-busy="true"><span className="spin" /></div>;
-  if (!items.length) return <div className="empty"><ShoppingBag size={36} aria-hidden="true" /><p>Keranjang kosong. Pilih produk dulu sebelum checkout.</p><a className="primary" href="/#produk">Lihat katalog</a></div>;
+  if (!ready) return (
+    <div className="ordergrid" aria-busy="true">
+      <span className="vh">Memuat checkout…</span>
+      <div className="cart-skel" aria-hidden="true"><span className="skel co-skel" /></div>
+      <div className="cart-skel-side skel" aria-hidden="true" />
+    </div>
+  );
+  if (!items.length) return <CartEmpty art={art} title="Keranjang kamu masih kosong" text="Pilih produk dulu sebelum checkout." />;
+
+  const lines = (
+    <ul className="lines mini">
+      {items.map(i => (
+        <li key={i.key}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {safeUrl(i.image) ? <img src={optimizedSrc(safeUrl(i.image), 256)} alt="" width={48} height={48} loading="lazy" /> : <span className="noimg64" />}
+          <span className="ln-main"><b>{i.name}</b><small>{[lineLabel(i), `${i.qty.toLocaleString('id-ID')} pcs`].filter(Boolean).join(' · ')}</small></span>
+          <b className="ln-total">{money(i.unit * i.qty)}</b>
+        </li>
+      ))}
+    </ul>
+  );
+  const submitLabel = busy ? <><span className="spin" aria-hidden="true" /> Membuat pesanan…</> : <><Lock size={16} aria-hidden="true" /> Buat pesanan</>;
 
   return (
     <form onSubmit={submit} className="ordergrid">
       <div className="ordermain">
-        <section className="boxed" aria-labelledby="co-ship">
-          <h2 id="co-ship">Alamat pengiriman</h2>
+        <details className="cosum only-sm">
+          <summary>
+            <span className="cosum-label">Lihat pesanan ({items.length} barang)</span>
+            <b className="num">{money(total)}</b>
+            <ChevronDown size={18} aria-hidden="true" />
+          </summary>
+          {lines}
+        </details>
+
+        <section className="boxed cocard" aria-labelledby="co-ship">
+          <h2 id="co-ship"><span className="stepno" aria-hidden="true">1</span>Alamat pengiriman</h2>
           <div className="form">
             <div className="form2">
               <label>Nama penerima<input required minLength={3} maxLength={80} autoComplete="name" value={f.name} onChange={set('name')} /></label>
               <label>Nomor WhatsApp<input required type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="081234567890" value={f.phone} onChange={set('phone')} /></label>
             </div>
-            <label>Perusahaan / toko (opsional)<input maxLength={80} autoComplete="organization" value={f.company} onChange={set('company')} /></label>
+            <label><span>Perusahaan / toko <span className="opt-tag">(opsional)</span></span><input maxLength={80} autoComplete="organization" value={f.company} onChange={set('company')} /></label>
             <label>Alamat lengkap<textarea required minLength={10} maxLength={300} rows={3} autoComplete="street-address" placeholder="Nama jalan, nomor, RT/RW, kelurahan, kecamatan" value={f.address} onChange={set('address')} /></label>
-            <div className="form2">
+            <div className="form2 form2--city">
               <label>Kota / kabupaten<input required minLength={2} maxLength={60} autoComplete="address-level2" value={f.city} onChange={set('city')} /></label>
-              <label>Kode pos<input inputMode="numeric" pattern="[0-9]{5}" maxLength={5} autoComplete="postal-code" value={f.postal_code} onChange={set('postal_code')} /></label>
+              <label><span>Kode pos <span className="opt-tag">(opsional)</span></span><input inputMode="numeric" pattern="[0-9]{5}" maxLength={5} autoComplete="postal-code" value={f.postal_code} onChange={set('postal_code')} /></label>
             </div>
-            <label>Catatan untuk admin (opsional)<textarea maxLength={500} rows={2} value={f.notes} onChange={set('notes')} /></label>
+            <label><span>Catatan untuk admin <span className="opt-tag">(opsional)</span></span><textarea maxLength={500} rows={2} value={f.notes} onChange={set('notes')} /></label>
             <p className="hintline">Konfirmasi pesanan dikirim ke {email}.</p>
           </div>
         </section>
+
+        <section className="boxed cocard" aria-labelledby="co-pay">
+          <h2 id="co-pay"><span className="stepno" aria-hidden="true">2</span>Pembayaran</h2>
+          <p className="cocard-lead">Pembayaran dilakukan di halaman pesanan, setelah kamu menekan Buat pesanan.</p>
+          <PaymentOptions qris={qris} />
+          {total > QRIS_MAX_AMOUNT && (
+            <p className="msg">
+              <Info aria-hidden="true" />
+              <span>Total di atas Rp 10.000.000 (batas QRIS). Setelah pesanan dibuat, pembayaran dilakukan lewat transfer bank dengan bantuan admin.</span>
+            </p>
+          )}
+        </section>
       </div>
-      <aside className="orderside">
-        <div className="paypanel">
+
+      <aside className="orderside" aria-label="Ringkasan pesanan">
+        <div className="paypanel receipt">
           <h2>Pesanan kamu</h2>
-          <ul className="lines mini">
-            {items.map(i => (
-              <li key={i.key}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {safeUrl(i.image) ? <img src={optimizedSrc(safeUrl(i.image), 256)} alt="" width={48} height={48} loading="lazy" /> : <span className="noimg64" />}
-                <span className="ln-main"><b>{i.name}</b><small>{[lineLabel(i), `${i.qty.toLocaleString('id-ID')} pcs`].filter(Boolean).join(' · ')}</small></span>
-                <b className="ln-total">{money(i.unit * i.qty)}</b>
-              </li>
-            ))}
-          </ul>
+          <div className="only-lg">{lines}</div>
           <dl className="sums">
-            <div><dt>Subtotal</dt><dd>{money(total)}</dd></div>
-            <div><dt>Ongkos kirim</dt><dd>Dikonfirmasi admin</dd></div>
+            <div><dt>Subtotal ({items.length} jenis · {pcs.toLocaleString('id-ID')} pcs)</dt><dd>{money(total)}</dd></div>
+            <div><dt>Ongkos kirim</dt><dd><span className="badge">Dikonfirmasi admin</span></dd></div>
             <div className="grand"><dt>Total barang</dt><dd>{money(total)}</dd></div>
           </dl>
-          {total > QRIS_MAX_AMOUNT && <p className="paynote">Total di atas Rp 10.000.000 (batas QRIS). Setelah pesanan dibuat, pembayaran dilakukan lewat transfer bank dengan bantuan admin.</p>}
-          {err && <div className="error" role="alert">{err}</div>}
-          <button className="primary full" disabled={busy}>{busy ? <><span className="spin" /> Membuat pesanan…</> : <><Lock size={16} /> Buat pesanan</>}</button>
-          <p className="paynote small">Ongkos kirim belum termasuk dan dikonfirmasi admin sesuai alamat. Dengan membuat pesanan kamu menyetujui <a href="/syarat-ketentuan" target="_blank">Syarat &amp; Ketentuan</a>.</p>
-          <a className="backlink" href="/keranjang">Ubah keranjang</a>
+          {shipNote}
+          {err && <p className="msg msg--danger" id="co-err" role="alert"><AlertCircle aria-hidden="true" /><span>{err}</span></p>}
+          <button className="btn btn-primary btn-lg btn-block only-lg" disabled={busy} aria-describedby={err ? 'co-err' : undefined}>{submitLabel}</button>
+          <p className="paynote small">Dengan membuat pesanan kamu menyetujui <a href="/syarat-ketentuan" target="_blank">Syarat &amp; Ketentuan</a>.</p>
+          <a className="backlink" href="/keranjang"><ArrowLeft size={16} aria-hidden="true" /> Ubah keranjang</a>
         </div>
       </aside>
+
+      <div className="stickybar">
+        {err && <p className="msg msg--danger stickybar-err" aria-hidden="true"><AlertCircle /><span>{err}</span></p>}
+        <div className="stickybar-info">
+          <span className="stickybar-total">{money(total)}</span>
+          <span className="stickybar-sub">Belum termasuk ongkir</span>
+        </div>
+        <button className="btn btn-primary" disabled={busy} aria-describedby={err ? 'co-err' : undefined}>{submitLabel}</button>
+      </div>
     </form>
   );
 }

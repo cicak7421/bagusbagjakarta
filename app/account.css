@@ -1,0 +1,401 @@
+/* =====================================================================
+   app/account.css : keranjang, checkout, masuk/daftar/lupa password,
+   akun saya, halaman pesanan, dan panel pembayaran.
+   Diimpor di app/layout.tsx SETELAH theme.css. Semua selector diawali .toko
+   dan memakai token dari theme.css. Gaya admin pesanan (.ord*, .ordbar,
+   .ordsearch) di shop.css tidak disentuh.
+
+   Isi file:
+     1. Kerangka halaman alur (.flowpage, .shophead, .ordergrid)
+     2. Baris barang (.lines) dan ringkasan (.sums, .paypanel)
+     3. Keranjang
+     4. Checkout
+     5. Masuk, daftar, lupa password, password baru
+     6. Akun saya
+     7. Halaman pesanan
+     8. Panel pembayaran
+   ===================================================================== */
+
+/* =====================================================================
+   1. KERANGKA HALAMAN ALUR
+   ===================================================================== */
+.toko .flowpage{
+  /* ukuran lokal (bukan token global) */
+  --thumb-lg:96px; --thumb-md:72px; --thumb:64px; --thumb-sm:48px;
+  --dot:28px; --dot-sm:24px; --side-w:380px; --nav-w:220px; --qr:260px; --form-w:400px;
+  --rule-soft:var(--surface-3);          /* garis tipis di atas panel krem */
+  padding-top:var(--s-4); padding-bottom:var(--s-5); min-height:0;
+}
+@supports (color:color-mix(in srgb,red,blue)){
+  .toko .flowpage{ --rule-soft:color-mix(in srgb,var(--line-strong) 38%,transparent) }
+}
+@media (min-width:640px){ .toko .flowpage{ padding-top:var(--s-5) } }
+
+.toko .shophead{ display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:var(--s-2) var(--s-5); margin:0 0 var(--s-5) }
+.toko .shophead > div:first-child{ min-width:0 }
+.toko .shophead h1{ margin:0; font-size:var(--fs-h1); font-weight:var(--w-medium); line-height:1.1 }
+.toko .shophead p{ margin:var(--s-2) 0 0; color:var(--ink-2); font-size:var(--fs-16); line-height:var(--lh-snug); overflow-wrap:anywhere }
+
+.toko .ordergrid{ display:grid; grid-template-columns:minmax(0,1fr); gap:var(--s-6); align-items:start }
+.toko .ordermain{ display:grid; gap:var(--s-5); min-width:0 }
+.toko .orderside{ min-width:0 }
+@media (min-width:900px){
+  .toko .ordergrid{ grid-template-columns:minmax(0,1fr) var(--side-w); gap:var(--s-7) }
+}
+/* Halaman alur selebar kontainer toko (tepi kiri sejajar logo, tepi kanan sejajar ikon keranjang).
+   Di layar lebar kolom ringkasan ikut melebar supaya baris barang dan kolom form tidak terlalu panjang. */
+@media (min-width:1200px){
+  .toko .ordergrid{ grid-template-columns:minmax(0,1fr) minmax(var(--side-w),34%); gap:var(--s-8) }
+}
+
+/* judul kartu dengan keterangan kecil di samping: <h2>Barang <small class="boxed-count">…</small></h2> */
+.toko .boxed-count{ margin-left:var(--s-2); font:var(--w-regular) var(--fs-13)/1.3 var(--font-sans); color:var(--mute) }
+
+/* muncul halus untuk pesan yang datang belakangan (urungkan, tersalin, konfirmasi batal) */
+@keyframes acct-in{ from{ opacity:0; transform:translateY(4px) } to{ opacity:1; transform:none } }
+
+/* =====================================================================
+   2. BARIS BARANG DAN RINGKASAN
+   ===================================================================== */
+.toko .lines{ list-style:none; margin:0; padding:0; display:grid }
+.toko .lines li{ display:flex; align-items:flex-start; gap:var(--s-4); padding:var(--s-4) 0; border-top:var(--bw) solid var(--line) }
+.toko .lines li:first-child{ border-top:0; padding-top:0 }
+.toko .lines li > img,.toko .noimg64{ display:block; flex:none; width:var(--thumb); height:var(--thumb); border-radius:var(--r-md) }
+.toko .noimg64{ background:var(--surface-3) }
+.toko .ln-main{ flex:1; min-width:0; display:grid; gap:2px }
+.toko .ln-main b{ font:var(--w-semi) var(--fs-14)/1.4 var(--font-sans); color:var(--ink); overflow-wrap:anywhere }
+.toko .ln-main b a{ color:inherit; text-decoration:none }
+.toko .ln-main b a:hover{ color:inherit; text-decoration:underline; text-underline-offset:3px }
+.toko .ln-main small{ font:var(--w-regular) var(--fs-13)/1.4 var(--font-sans); color:var(--mute) }
+.toko .ln-total{ flex:none; white-space:nowrap; font:var(--w-bold) var(--fs-14)/1.4 var(--font-sans); color:var(--ink) }
+
+/* versi ringkas (checkout) */
+.toko .lines.mini li{ gap:var(--s-3); padding:var(--s-3) 0 }
+.toko .lines.mini li:first-child{ padding-top:0 }
+.toko .lines.mini li > img,.toko .lines.mini .noimg64{ width:var(--thumb-sm); height:var(--thumb-sm); border-radius:var(--r-sm) }
+.toko .paypanel .lines li{ border-top-color:var(--rule-soft) }
+/* daftar panjang tidak mendorong tombol keluar dari layar (panel ringkasan lengket) */
+.toko .paypanel .lines.mini{ max-height:calc(4.5 * (var(--thumb-sm) + 2 * var(--s-3))); overflow-y:auto; overscroll-behavior:contain }
+
+/* rincian angka */
+.toko .sums{ display:grid; gap:var(--s-3); margin:0; padding:0; border:0; font:var(--w-regular) var(--fs-14)/1.4 var(--font-sans) }
+.toko .sums > div{ display:flex; justify-content:space-between; align-items:center; gap:var(--s-4) }
+.toko .sums dt{ color:var(--ink-2) }
+.toko .sums dd{ margin:0; text-align:right; white-space:nowrap; font-weight:var(--w-semi); color:var(--ink) }
+.toko .sums .grand{ align-items:baseline; margin-top:var(--s-1); padding-top:var(--s-4); border-top:var(--stitch); font-size:var(--fs-16) }
+.toko .sums .grand dt{ color:var(--ink); font-weight:var(--w-semi) }
+.toko .sums .grand dd{ font:var(--w-bold) var(--fs-22)/1.1 var(--font-sans); letter-spacing:-.01em }
+.toko .lines + .sums{ margin-top:var(--s-4); padding-top:var(--s-4); border-top:var(--bw) solid var(--line) }
+.toko .boxed > .sums + .shipnote{ margin-top:var(--s-4) }
+
+/* panel krem (ringkasan dan pembayaran) */
+.toko .paypanel > h2{ margin-bottom:0 }
+.toko .paypanel .badge:where(:not([class*="badge--"]),.badge--neutral){ background:var(--surface-3) }
+.toko .paynote{ margin:0; font:var(--w-regular) var(--fs-14)/1.5 var(--font-sans); color:var(--ink-2) }
+.toko .paynote.small{ font-size:var(--fs-13); color:var(--mute) }
+.toko .paynote b{ color:var(--ink) }
+.toko :is(.paynote,.hintline,.authalt,.agree) a:where(:not([class])){ color:var(--brand); font-weight:var(--w-semi); text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px }
+.toko .paypanel > .backlink{ justify-self:center }
+.toko .paypanel > .btn + .shipnote{ margin-top:0 }
+
+/* =====================================================================
+   3. KERANJANG
+   ===================================================================== */
+.toko .cart-undo .msg{ align-items:center; margin-bottom:var(--s-4); animation:acct-in var(--dur-2) var(--ease) }
+.toko .cart-undo .msg > svg{ margin-top:0 }
+.toko .cart-undo .msg .linkbtn{ flex:none; margin-block:calc(var(--s-3) * -1) }
+
+.toko .cartlines{ padding:0; border:0; border-top:var(--bw) solid var(--ink); border-radius:0 }
+.toko .cartlines li{ display:grid; grid-template-columns:var(--thumb-md) minmax(0,1fr) auto; grid-template-areas:"img main main" "act act total"; align-items:start; gap:var(--s-3) var(--s-4); padding:var(--s-4) 0; border-top:0; border-bottom:var(--bw) solid var(--line) }
+.toko .cartlines li:first-child{ padding-top:var(--s-4) }
+.toko .cartlines li > img,.toko .cartlines .noimg64{ grid-area:img; width:var(--thumb-md); height:var(--thumb-md); border-radius:var(--r-md) }
+.toko .cartlines .ln-main{ grid-area:main; gap:var(--s-1) }
+.toko .ln-name{ font:var(--w-semi) var(--fs-16)/var(--lh-snug) var(--font-sans); color:var(--ink); text-decoration:none; overflow-wrap:anywhere }
+.toko .ln-name:hover{ color:var(--ink); text-decoration:underline; text-underline-offset:3px }
+.toko .ln-var{ font:var(--w-regular) var(--fs-14)/1.4 var(--font-sans); color:var(--mute) }
+.toko .ln-unit{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--s-1) var(--s-2); margin-top:var(--s-1); font:var(--w-medium) var(--fs-13)/1.3 var(--font-sans); color:var(--ink-2) }
+.toko .cartlines .ln-actions{ grid-area:act; display:flex; flex-wrap:nowrap; align-items:center; gap:var(--s-1); margin:0 }
+.toko .cartlines .ln-total{ grid-area:total; align-self:center; width:auto; text-align:right; font:var(--w-bold) var(--fs-16)/1.2 var(--font-sans) }
+.toko .ln-del{ color:var(--ink-2) }
+.toko .ln-del:hover{ color:var(--danger) }
+/* stepper HP: 44px supaya jumlah, hapus, dan total muat satu baris di 360px */
+.toko .cartlines .qty{ height:var(--tap) }
+.toko .cartlines .qty button{ width:var(--tap) }
+.toko .cartlines .qty input{ width:calc(var(--s-7) + var(--s-4)) }
+@media (min-width:640px){
+  .toko .cartlines li{ grid-template-columns:var(--thumb-lg) minmax(0,1fr) auto; grid-template-areas:"img main total" "img act act"; padding:var(--s-5) 0 }
+  .toko .cartlines li:first-child{ padding-top:var(--s-5) }
+  .toko .cartlines li > img,.toko .cartlines .noimg64{ width:var(--thumb-lg); height:var(--thumb-lg) }
+  .toko .cartlines .ln-actions{ gap:var(--s-2); align-self:end }
+  .toko .cartlines .ln-total{ align-self:start }
+  .toko .cartlines .qty{ height:var(--control-h) }
+  .toko .cartlines .qty button{ width:var(--control-h) }
+  .toko .cartlines .qty input{ width:calc(var(--s-8) + var(--s-2)) }
+}
+
+/* kerangka saat memuat: setinggi baris asli, tanpa lompatan tata letak */
+.toko .cart-skel{ display:grid; gap:var(--s-4); padding-top:var(--s-4); border-top:var(--bw) solid var(--ink) }
+.toko .cart-skel .skel{ height:calc(var(--thumb-md) + var(--tap) + var(--s-3)) }
+.toko .cart-skel .co-skel{ height:calc(var(--s-9) * 4) }
+.toko .cart-skel-side{ height:calc(var(--s-9) * 3); border-radius:var(--r-lg) }
+.toko .cart-skel-total{ width:calc(var(--s-9) + var(--s-5)); height:var(--s-5) }
+@media (min-width:640px){ .toko .cart-skel{ padding-top:var(--s-5) } .toko .cart-skel .skel{ height:var(--thumb-lg) } .toko .cart-skel .co-skel{ height:calc(var(--s-9) * 4) } }
+
+/* =====================================================================
+   4. CHECKOUT
+   ===================================================================== */
+/* stepper: Keranjang, Alamat dan pembayaran, Bayar */
+.toko .cohead{ align-items:center }
+.toko .flowwrap{ display:flex; align-items:center; gap:var(--s-3) }
+.toko .flowsteps{ display:flex; align-items:center; margin:0; padding:0; list-style:none }
+.toko .flowsteps li{ display:flex; align-items:center; gap:var(--s-2); font:var(--w-semi) var(--fs-13)/1.2 var(--font-sans); color:var(--mute); white-space:nowrap }
+.toko .flowsteps li + li::before{ content:""; flex:none; width:var(--s-6); height:var(--bw); margin-inline:var(--s-3); background:var(--line-strong) }
+.toko .flowsteps a{ display:inline-flex; align-items:center; gap:var(--s-2); min-height:var(--tap); color:var(--ink); text-decoration:none }
+.toko .flowsteps a:hover .fs-label{ text-decoration:underline; text-underline-offset:3px }
+.toko .fs-dot{ display:grid; place-items:center; flex:none; width:var(--dot); height:var(--dot); border:var(--bw-strong) solid var(--line-strong); border-radius:50%; background:var(--surface); color:var(--mute); font:var(--w-bold) var(--fs-13)/1 var(--font-sans); font-variant-numeric:tabular-nums lining-nums }
+.toko .flowsteps .is-done .fs-dot{ border-color:var(--brand); background:var(--brand); color:var(--on-brand) }
+.toko .flowsteps .is-now{ color:var(--ink) }
+.toko .flowsteps .is-now .fs-dot{ border:2px solid var(--brand); background:var(--brand-tint); color:var(--brand-strong) }
+.toko .fs-count{ display:none; margin:0; font:var(--w-semi) var(--fs-13)/1.2 var(--font-sans); color:var(--ink-2); white-space:nowrap }
+@media (max-width:767.98px){
+  /* HP: tiga titik + "Langkah 2 dari 3"; label tetap terbaca pembaca layar */
+  .toko .flowsteps .fs-label{ position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap }
+  .toko .flowsteps li + li::before{ width:var(--s-4); margin-inline:var(--s-2) }
+  .toko .flowsteps a{ min-width:var(--tap); justify-content:center; margin-inline:calc(var(--s-2) * -1) }
+  .toko .shophead .fs-count{ display:block; margin:0; font-size:var(--fs-13) }
+}
+
+/* kartu bernomor */
+.toko .cocard > h2{ display:flex; align-items:center; gap:var(--s-3) }
+.toko .stepno{ display:grid; place-items:center; flex:none; width:var(--dot); height:var(--dot); border-radius:50%; background:var(--brand-tint); color:var(--brand-strong); font:var(--w-bold) var(--fs-14)/1 var(--font-sans); font-variant-numeric:tabular-nums lining-nums }
+.toko .cocard-lead{ margin:0 0 var(--s-4); font:var(--w-regular) var(--fs-14)/1.5 var(--font-sans); color:var(--ink-2) }
+.toko .cocard > .msg{ margin-top:var(--s-3) }
+@media (max-width:639.98px){
+  .toko .cocard{ padding:var(--s-5) 0 0; border:0; border-top:var(--bw) solid var(--line); border-radius:0; background:none }
+}
+
+/* form: satu kolom di HP, dua kolom mulai 640px */
+.toko .form{ display:grid; gap:var(--s-4) }
+.toko .form2{ display:grid; grid-template-columns:minmax(0,1fr); gap:var(--s-4) }
+@media (min-width:640px){
+  .toko .form2{ grid-template-columns:repeat(2,minmax(0,1fr)) }
+  .toko .form2.form2--city{ grid-template-columns:minmax(0,1fr) calc(var(--s-9) * 2) }
+}
+
+/* metode bayar di kartu Pembayaran */
+.toko .cocard .paylist{ display:grid; gap:var(--s-2); margin:0; padding:0; list-style:none }
+.toko .cocard .payitem{ display:flex; align-items:center; gap:var(--s-3); padding:var(--s-3) var(--s-4); border-radius:var(--r-md); background:var(--surface-2); opacity:1 }
+.toko .cocard .payicon{ display:grid; place-items:center; flex:none; width:var(--tap); height:var(--tap); border-radius:var(--r-sm); background:var(--surface); color:var(--ink) }
+.toko .cocard .paytext{ display:grid; gap:2px; min-width:0 }
+.toko .cocard .paytext b{ font:var(--w-semi) var(--fs-14)/1.3 var(--font-sans); color:var(--ink) }
+.toko .cocard .paytext small{ font:var(--w-regular) var(--fs-13)/1.4 var(--font-sans); color:var(--ink-2) }
+
+/* ringkasan terlipat (HP) */
+.toko .cosum{ border-radius:var(--r-md); background:var(--surface-2) }
+.toko .cosum > summary{ display:flex; align-items:center; gap:var(--s-3); min-height:var(--control-h); padding:0 var(--s-4); border-radius:var(--r-md); list-style:none; cursor:pointer; font:var(--w-semi) var(--fs-14)/1.3 var(--font-sans); color:var(--ink) }
+.toko .cosum > summary::-webkit-details-marker{ display:none }
+.toko .cosum-label{ flex:1; min-width:0; color:var(--brand); text-decoration:underline; text-underline-offset:4px }
+.toko .cosum > summary b{ font-weight:var(--w-bold); white-space:nowrap }
+.toko .cosum > summary svg{ flex:none; color:var(--ink-2); transition:transform var(--dur-1) var(--ease) }
+.toko .cosum[open] > summary svg{ transform:rotate(180deg) }
+.toko .cosum .lines{ padding:var(--s-2) var(--s-4) var(--s-4) }
+.toko .cosum .lines li{ border-top-color:var(--rule-soft) }
+
+/* error tepat di atas bar bawah (HP) */
+.toko .stickybar-err{ position:absolute; left:var(--gutter); right:var(--gutter); bottom:calc(100% + var(--s-2)); box-shadow:var(--shadow-1); animation:acct-in var(--dur-2) var(--ease) }
+
+/* =====================================================================
+   5. MASUK, DAFTAR, LUPA PASSWORD, PASSWORD BARU
+   ===================================================================== */
+.toko .authgrid{ display:grid; grid-template-columns:minmax(0,1fr) }
+.toko .authside{ display:none }
+.toko .authform{ display:grid; gap:var(--s-4); align-content:start; width:100%; max-width:var(--form-w); margin-inline:auto }
+.toko .authform h1{ margin:0; font-size:var(--fs-h1) }
+.toko .authlead{ margin:0; font-size:var(--fs-16); line-height:1.5; color:var(--ink-2) }
+.toko .authperks{ margin:calc(var(--s-2) * -1) 0 0; font:var(--w-regular) var(--fs-13)/1.4 var(--font-sans); color:var(--mute) }
+.toko .authicon{ color:var(--brand) }
+.toko .authform .form{ margin-top:var(--s-2) }
+.toko .authform > .btn{ margin-top:var(--s-2) }
+.toko .authalt{ margin:var(--s-2) 0 0; padding-top:var(--s-4); border-top:var(--bw) solid var(--line); text-align:center; font:var(--w-regular) var(--fs-14)/1.5 var(--font-sans); color:var(--ink-2) }
+.toko .authalt .backlink{ justify-content:center }
+.toko .authform .agree{ align-items:flex-start; padding-block:var(--s-2) }
+.toko .authform .agree input{ margin-top:1px }
+
+/* kolom password: label kiri, link kanan, lalu input dan teks bantu */
+.toko .field--pw{ grid-template-columns:minmax(0,1fr) auto; align-items:center }
+.toko .field--pw > label{ grid-column:1; grid-row:1 }
+.toko .field--pw > .field-link{ grid-column:2; grid-row:1 }
+.toko .field--pw > :is(.pwfield,.hintline){ grid-column:1 / -1 }
+.toko .field-link{ display:inline-flex; align-items:center; min-height:var(--tap); margin-block:calc(var(--s-3) * -1); font:var(--w-semi) var(--fs-13)/1.2 var(--font-sans); color:var(--brand); text-decoration:underline; text-underline-offset:3px }
+.toko .field-link:hover{ color:var(--brand-strong) }
+.toko .pwfield .btn-icon{ color:var(--ink-2) }
+
+@media (min-width:900px){
+  .toko .authgrid{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--s-8); align-items:center; min-height:min(640px,calc(100dvh - var(--header-h) - var(--s-9))); padding-block:var(--s-5) }
+  .toko .authside{ display:grid; align-content:center; align-self:stretch; gap:var(--s-5); padding:var(--s-7) }
+  .toko .authside .seclabel{ margin:var(--s-2) 0 0 }
+  .toko .authside-title{ margin:0; max-width:14ch; font:var(--w-medium) var(--fs-36)/1.1 var(--font-serif); letter-spacing:var(--track-display); color:var(--ink) }
+  .toko .authside-list{ display:grid; margin:var(--s-2) 0 0; padding:0; list-style:none }
+  .toko .authside-list li{ display:flex; align-items:center; gap:var(--s-3); padding:var(--s-4) 0; border-top:var(--bw) solid var(--rule-soft); font:var(--w-regular) var(--fs-16)/1.4 var(--font-sans); color:var(--ink) }
+  .toko .authside-list svg{ flex:none; color:var(--ink) }
+}
+
+/* =====================================================================
+   6. AKUN SAYA
+   ===================================================================== */
+/* kepala akun: tombol Keluar tetap di kanan judul, email boleh turun baris */
+.toko .accthead{ flex-wrap:nowrap; align-items:flex-start; margin-bottom:var(--s-4) }
+.toko .accthead > div:first-child{ flex:1 1 0 }
+.toko .accthead > .btn{ flex:none }
+.toko .acct{ display:grid; grid-template-columns:minmax(0,1fr); gap:var(--s-5); align-items:start; max-width:none }
+.toko .acctmain{ display:grid; gap:var(--s-7); min-width:0 }
+
+/* menu akun: tab geser lengket di HP, daftar lengket di desktop */
+.toko .acctnav{ position:sticky; top:var(--header-h); z-index:calc(var(--z-header) - 10); display:flex; margin-inline:calc(var(--gutter) * -1); padding-inline:calc(var(--gutter) - var(--s-3)); border-bottom:var(--bw) solid var(--line); background:var(--canvas); overflow-x:auto; scrollbar-width:none }
+.toko .acctnav::-webkit-scrollbar{ display:none }
+.toko .acctnav a{ display:inline-flex; align-items:center; gap:var(--s-2); flex:none; height:var(--control-h); padding:0 var(--s-3); font:var(--w-semi) var(--fs-14)/1 var(--font-sans); color:var(--ink); text-decoration:none; white-space:nowrap }
+.toko .acctnav a svg{ flex:none; color:var(--mute) }
+.toko .acctnav a:hover{ color:var(--brand-strong) }
+.toko .acctnav a:focus-visible{ outline-offset:-2px }
+
+.toko .acctsec > h2{ margin:0 0 var(--s-4); font-size:var(--fs-22); scroll-margin-top:calc(var(--header-h) + var(--control-h) + var(--s-5)) }
+.toko .acctsec + .acctsec{ padding-top:var(--s-7); border-top:var(--bw) solid var(--line) }
+.toko .acctsec-sub{ margin:calc(var(--s-2) * -1) 0 var(--s-4); font:var(--w-regular) var(--fs-14)/1.5 var(--font-sans); color:var(--ink-2) }
+.toko .acctsec .emptystate{ padding-block:var(--s-5) var(--s-2) }
+.toko .emptystate-title{ margin:0; font:var(--w-medium) var(--fs-22)/1.2 var(--font-serif); letter-spacing:var(--track-display); color:var(--ink) }
+
+@media (min-width:640px){
+  .toko .acctsec > h2{ font-size:var(--fs-28) }
+}
+@media (min-width:900px){
+  .toko .acct{ grid-template-columns:var(--nav-w) minmax(0,1fr); gap:var(--s-7); padding-top:var(--s-5); border-top:var(--bw) solid var(--ink) }
+  .toko .acctnav{ top:calc(var(--header-h) + var(--s-5)); display:grid; gap:var(--s-1); margin:0; padding:0; border:0; background:none; overflow:visible }
+  .toko .acctnav a{ height:var(--tap); margin-inline:calc(var(--s-3) * -1) 0; border-radius:var(--r-md) }
+  .toko .acctnav a:hover{ background:var(--surface-2); color:var(--ink) }
+  .toko .acctnav a:focus-visible{ outline-offset:2px }
+  .toko .acctsec > h2{ scroll-margin-top:calc(var(--header-h) + var(--s-6)) }
+}
+
+/* daftar pesanan: satu kartu per pesanan, seluruh kartu bisa diklik */
+.toko .orderlist{ display:grid; gap:var(--s-3); margin:0; padding:0; list-style:none }
+.toko .orderlist a{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"ico main chev" "side side side"; align-items:start; gap:var(--s-3); padding:var(--s-4); border:var(--bw) solid var(--line); border-radius:var(--r-lg); background:var(--surface); color:var(--ink); text-decoration:none; transition:border-color var(--dur-1) }
+.toko .orderlist a:hover{ border-color:var(--ink) }
+.toko .ol-ico{ grid-area:ico; margin-top:2px; color:var(--mute) }
+.toko .ol-chev{ grid-area:chev; align-self:center; color:var(--mute) }
+.toko .ol-main{ grid-area:main; display:grid; gap:2px; min-width:0 }
+.toko .ol-main b{ font:var(--w-semi) var(--fs-16)/1.3 var(--font-sans); color:var(--ink); overflow-wrap:anywhere }
+.toko .ol-main small{ font:var(--w-regular) var(--fs-13)/1.4 var(--font-sans); color:var(--mute) }
+.toko .ol-count{ margin-top:var(--s-1); font:var(--w-regular) var(--fs-14)/1.4 var(--font-sans); color:var(--ink-2) }
+.toko .ol-items{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.toko .ol-side{ grid-area:side; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:var(--s-2) var(--s-3); justify-items:start; padding-top:var(--s-3); border-top:var(--bw) solid var(--line) }
+.toko .ol-side b{ font:var(--w-bold) var(--fs-16)/1.3 var(--font-sans); color:var(--ink); white-space:nowrap }
+.toko .ol-pay{ flex-basis:100%; min-height:0 }
+@media (min-width:640px){
+  .toko .orderlist a{ grid-template-columns:auto minmax(0,1fr) auto auto; grid-template-areas:"ico main side chev"; gap:var(--s-4); padding:var(--s-5) }
+  .toko .ol-side{ display:grid; grid-auto-flow:row; justify-items:end; gap:var(--s-2); padding-top:0; border-top:0 }
+}
+
+/* form data diri */
+.toko .formstatus:empty{ display:none }
+.toko .formstatus .msg{ animation:acct-in var(--dur-2) var(--ease) }
+.toko .profileform-save{ justify-self:stretch }
+@media (min-width:640px){ .toko .profileform-save{ justify-self:start } }
+
+/* =====================================================================
+   7. HALAMAN PESANAN
+   ===================================================================== */
+.toko .orderpage > .crumbs{ margin-bottom:var(--s-2) }
+.toko .orderpage > .msg{ margin-bottom:var(--s-4) }
+.toko .orderhead{ align-items:center }
+/* nomor pesanan: angka tabular (Jakarta), tidak pernah terpotong; tombol salin sejajar baris nomor */
+.toko .orderhead-title{ display:flex; align-items:flex-end; gap:var(--s-2) }
+.toko .orderhead-title h1{ min-width:0 }
+.toko .orderhead-title h1 .num{ font-family:var(--font-sans); font-size:.8em; font-weight:var(--w-semi); letter-spacing:-.01em }
+.toko .orderhead-title .copybtn{ margin-bottom:calc((var(--fs-h1) * 1.1 - var(--tap)) / 2) }
+/* layar pendek: panel bayar tidak lengket supaya bagian bawahnya selalu bisa dijangkau */
+@media (max-height:759.98px){ .toko .orderpage .orderside{ position:static } }
+/* HP: total baris turun ke bawah rincian supaya nama produk tidak terjepit */
+@media (max-width:639.98px){
+  .toko .orderpage .lines li{ display:grid; grid-template-columns:var(--thumb) minmax(0,1fr); gap:var(--s-1) var(--s-4) }
+  .toko .orderpage .lines li > :is(img,.noimg64){ grid-row:1 / span 2 }
+  .toko .orderpage .lines .ln-total{ grid-column:2; justify-self:start }
+}
+
+/* tombol salin + umpan balik "Tersalin" */
+.toko .copybtn{ position:relative; display:inline-flex; flex:none }
+.toko .copybtn .btn-icon{ color:var(--ink-2) }
+.toko .copybtn-tip{ position:absolute; left:50%; bottom:calc(100% + var(--s-1)); transform:translateX(-50%); pointer-events:none }
+.toko .copybtn-tip:empty{ display:none }
+.toko .copybtn-tip .badge{ animation:acct-in var(--dur-1) var(--ease) }
+
+/* garis waktu status: vertikal di HP, mendatar mulai 640px */
+.toko .progress{ display:grid; grid-template-columns:minmax(0,1fr); gap:0; margin:0 0 var(--s-5); padding:0; list-style:none; font:var(--w-medium) var(--fs-13)/1.3 var(--font-sans); color:var(--mute) }
+.toko .progress li{ position:relative; display:grid; grid-template-columns:var(--dot-sm) minmax(0,1fr); align-items:center; justify-items:start; gap:var(--s-3); min-height:calc(var(--dot-sm) + var(--s-3)); padding:0; border:0 }
+.toko .progress li + li::before{ content:""; position:absolute; left:calc(var(--dot-sm) / 2 - 1px); top:calc(var(--s-3) / -2); width:2px; height:var(--s-3); background:var(--line) }
+.toko .progress li:is(.done,.now)::before{ background:var(--brand) }
+.toko .progress li.done{ color:var(--ink-2) }
+.toko .progress li.now{ color:var(--ink); font:var(--w-semi) var(--fs-14)/1.3 var(--font-sans) }
+.toko .pdot{ display:grid; place-items:center; width:var(--dot-sm); height:var(--dot-sm); border-radius:50%; background:var(--surface-3); color:var(--mute); font:var(--w-bold) var(--fs-12)/1 var(--font-sans); font-variant-numeric:tabular-nums lining-nums }
+.toko .progress .done .pdot{ background:var(--brand); color:var(--on-brand) }
+.toko .progress .now .pdot{ background:var(--brand-tint); color:var(--brand-strong); box-shadow:inset 0 0 0 var(--bw-strong) var(--brand) }
+@media (min-width:640px){
+  .toko .progress{ grid-template-columns:repeat(5,minmax(0,1fr)); gap:var(--s-2); margin-bottom:var(--s-6) }
+  .toko .progress li{ grid-template-columns:minmax(0,1fr); align-content:start; align-items:start; gap:var(--s-2); min-height:0; padding-top:var(--s-3); border-top:2px solid var(--line) }
+  .toko .progress li:is(.done,.now){ border-top-color:var(--brand) }
+  .toko .progress li + li::before{ display:none }
+}
+
+/* HP: panel bayar naik ke atas daftar barang selama pesanan menunggu pembayaran */
+@media (max-width:899.98px){ .toko .ordergrid.is-pay .orderside{ order:-1 } }
+
+/* data pengiriman */
+.toko .infolist{ display:grid; margin:0; font:var(--w-regular) var(--fs-16)/1.5 var(--font-sans) }
+.toko .infolist > div{ display:grid; gap:2px; padding:var(--s-3) 0; border-top:var(--bw) solid var(--line) }
+.toko .infolist > div:first-child{ padding-top:0; border-top:0 }
+.toko .infolist > div:last-child{ padding-bottom:0 }
+.toko .infolist dt{ font:var(--w-regular) var(--fs-13)/1.4 var(--font-sans); color:var(--mute) }
+.toko .infolist dd{ margin:0; color:var(--ink); overflow-wrap:anywhere }
+.toko .infolist dd b{ font-weight:var(--w-semi) }
+@media (min-width:640px){
+  .toko .infolist > div{ grid-template-columns:calc(var(--s-9) + var(--s-7)) minmax(0,1fr); gap:var(--s-4); align-items:baseline }
+}
+.toko .track{ display:flex; align-items:center; gap:var(--s-3); margin:var(--s-4) 0 0; padding:var(--s-1) var(--s-1) var(--s-1) var(--s-4); border-radius:var(--r-md); background:var(--surface-2); font:var(--w-regular) var(--fs-14)/1.4 var(--font-sans); color:var(--ink) }
+.toko .track svg{ flex:none; color:inherit }
+.toko .track-text{ flex:1; min-width:0; padding-block:var(--s-3); overflow-wrap:anywhere }
+.toko .track-text b{ font-weight:var(--w-semi) }
+
+/* =====================================================================
+   8. PANEL PEMBAYARAN
+   ===================================================================== */
+.toko .paytotal{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:var(--s-1) var(--s-3) }
+.toko .paytotal span{ font:var(--w-regular) var(--fs-14)/1.3 var(--font-sans); color:var(--ink-2) }
+.toko .paytotal b{ font:var(--w-bold) var(--fs-22)/1.1 var(--font-sans); letter-spacing:-.01em; color:var(--ink) }
+@media (min-width:640px){ .toko .paytotal b{ font-size:var(--fs-28) } }
+
+.toko .paystate{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--s-2) var(--s-3); margin:0; font:var(--w-regular) var(--fs-13)/1.4 var(--font-sans); color:var(--ink-2) }
+
+.toko .qrbox{ display:grid; place-items:center; padding:var(--s-4); border-radius:var(--r-lg); background:var(--surface) }
+.toko .qrbox img{ display:block; width:min(var(--qr),100%); height:auto; aspect-ratio:1/1 }
+.toko .paypanel .qrtimer{ justify-self:center; margin:0; background:var(--surface); color:var(--ink-2) }
+.toko .paypanel .qrtimer.badge--warn{ background:var(--warn-bg); color:var(--warn) }
+.toko .qrtimer b{ font-weight:var(--w-bold); color:var(--ink) }
+.toko .qrtimer.badge--warn b{ color:inherit }
+.toko .paysteps{ display:grid; gap:var(--s-2); margin:0; padding-left:var(--s-5); font:var(--w-regular) var(--fs-14)/1.5 var(--font-sans); color:var(--ink-2) }
+.toko .paysteps b{ color:var(--ink) }
+
+.toko .paypanel .msg{ background-color:var(--surface) }
+.toko .paypanel .msg.msg--warn{ background-color:var(--warn-bg) }
+.toko .paypanel .msg.msg--danger{ background-color:var(--danger-bg) }
+.toko .paypanel .msg.msg--ok{ background-color:var(--ok-bg) }
+
+.toko .cancelask{ display:grid; gap:var(--s-3); animation:acct-in var(--dur-2) var(--ease) }
+.toko .cancelask .btnrow{ justify-content:flex-end }
+
+.toko .payfoot{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0 var(--s-4); padding-top:var(--s-2); border-top:var(--bw) solid var(--rule-soft); font-size:var(--fs-14) }
+.toko .payfoot a svg{ flex:none; color:var(--wa) }
+
+/* lunas */
+.toko .paypanel.paid{ justify-items:center; gap:var(--s-2); padding-block:var(--s-6); text-align:center; background:var(--ok-bg); color:var(--ink) }
+.toko .paypanel.paid svg{ color:var(--ok) }
+.toko .paypanel.paid b{ font:var(--w-semi) var(--fs-18)/1.3 var(--font-sans); color:var(--ink) }
+.toko .paypanel.paid p{ margin:0; font-size:var(--fs-14); color:var(--ink-2) }

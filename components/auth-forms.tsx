@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, Info, MailCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { safeNext } from '@/lib/orders';
 
@@ -18,12 +18,35 @@ function authError(e: { message?: string; status?: number; code?: string } | nul
   return fallback;
 }
 
-function Shell({ title, lead, children }: { title: string; lead: string; children: React.ReactNode }) {
+/** Kolom kanan halaman masuk/daftar/lupa/reset. Kolom kiri (manfaat akun) dipasang oleh app/akun/auth-frame.tsx. */
+function Shell({ title, lead, icon, children }: { title: string; lead: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="authbox">
+    <div className="authform">
+      {icon}
       <h1>{title}</h1>
       <p className="authlead">{lead}</p>
+      <p className="authperks only-sm">Pantau pesanan · alamat tersimpan · riwayat pesanan</p>
       {children}
+    </div>
+  );
+}
+
+const ErrorMsg = ({ text }: { text: string }) => (text ? <p className="msg msg--danger" role="alert"><AlertCircle aria-hidden="true" /><span>{text}</span></p> : null);
+
+/** Kolom password dengan tombol tampilkan/sembunyikan. `link` (mis. "Lupa password?") tampil sejajar label. */
+function PasswordField({ id, label, hint, link, ...input }: { id: string; label: string; hint?: string; link?: React.ReactNode } & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'id' | 'type'>) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="field field--pw">
+      <label htmlFor={id}>{label}</label>
+      <span className="pwfield">
+        <input id={id} type={show ? 'text' : 'password'} aria-describedby={hint ? `${id}-hint` : undefined} {...input} />
+        <button type="button" className="btn btn-icon btn-icon--bare" aria-pressed={show} aria-label="Tampilkan password" onClick={() => setShow(s => !s)}>
+          {show ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+        </button>
+      </span>
+      {link}
+      {hint && <small className="hintline" id={`${id}-hint`}>{hint}</small>}
     </div>
   );
 }
@@ -45,14 +68,14 @@ export function LoginForm({ next, notice }: { next?: string; notice?: string }) 
   }
   return (
     <Shell title="Masuk" lead="Masuk untuk checkout dan melihat status pesanan kamu.">
-      {notice && <div className="notice" role="status">{notice}</div>}
+      {notice && <p className="msg" role="status"><Info aria-hidden="true" /><span>{notice}</span></p>}
       <form onSubmit={submit} className="form">
         <label>Email<input type="email" required autoComplete="email" inputMode="email" value={email} onChange={e => setEmail(e.target.value)} /></label>
-        <label>Password<input type="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} /></label>
-        {err && <div className="error" role="alert">{err}</div>}
-        <button className="primary full" disabled={loading}>{loading ? 'Memproses…' : 'Masuk'} <ArrowRight size={17} /></button>
+        <PasswordField id="login-password" label="Password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)}
+          link={<a className="field-link" href="/akun/lupa-password">Lupa password?</a>} />
+        <ErrorMsg text={err} />
+        <button className="btn btn-primary btn-lg btn-block" disabled={loading}>{loading ? 'Memproses…' : 'Masuk'} <ArrowRight size={18} aria-hidden="true" /></button>
       </form>
-      <p className="authalt"><a href="/akun/lupa-password">Lupa password?</a></p>
       <p className="authalt">Belum punya akun? <a href={`/akun/daftar?next=${encodeURIComponent(target)}`}>Daftar gratis</a></p>
     </Shell>
   );
@@ -85,7 +108,8 @@ export function RegisterForm({ next }: { next?: string }) {
     setSent(true); setLoading(false);
   }
   if (sent) return (
-    <Shell title="Cek email kamu" lead={`Kami mengirim link verifikasi ke ${f.email.trim()}. Klik link itu untuk mengaktifkan akun, lalu masuk.`}>
+    <Shell icon={<MailCheck className="authicon" size={40} aria-hidden="true" />} title="Cek email kamu" lead={`Kami mengirim link verifikasi ke ${f.email.trim()}. Klik link itu untuk mengaktifkan akun, lalu masuk.`}>
+      <a className="btn btn-outline btn-block" href="/akun/masuk">Ke halaman masuk</a>
       <p className="authalt">Tidak ada email masuk? Cek folder spam, atau <a href="/akun/masuk">coba masuk</a> kalau kamu sudah pernah mendaftar.</p>
     </Shell>
   );
@@ -95,10 +119,10 @@ export function RegisterForm({ next }: { next?: string }) {
         <label>Nama lengkap<input required autoComplete="name" maxLength={80} value={f.name} onChange={set('name')} /></label>
         <label>Nomor WhatsApp<input required type="tel" autoComplete="tel" inputMode="tel" maxLength={20} placeholder="081234567890" value={f.phone} onChange={set('phone')} /></label>
         <label>Email<input required type="email" autoComplete="email" inputMode="email" value={f.email} onChange={set('email')} /></label>
-        <label>Password<input required type="password" autoComplete="new-password" minLength={MIN_PASSWORD} value={f.password} onChange={set('password')} /><small>Minimal {MIN_PASSWORD} karakter.</small></label>
+        <PasswordField id="register-password" label="Password" hint={`Minimal ${MIN_PASSWORD} karakter.`} required autoComplete="new-password" minLength={MIN_PASSWORD} value={f.password} onChange={set('password')} />
         <label className="agree"><input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} /><span>Saya setuju dengan <a href="/syarat-ketentuan" target="_blank">Syarat &amp; Ketentuan</a> dan <a href="/kebijakan-privasi" target="_blank">Kebijakan Privasi</a>.</span></label>
-        {err && <div className="error" role="alert">{err}</div>}
-        <button className="primary full" disabled={loading}>{loading ? 'Memproses…' : 'Daftar'} <ArrowRight size={17} /></button>
+        <ErrorMsg text={err} />
+        <button className="btn btn-primary btn-lg btn-block" disabled={loading}>{loading ? 'Memproses…' : 'Daftar'} <ArrowRight size={18} aria-hidden="true" /></button>
       </form>
       <p className="authalt">Sudah punya akun? <a href={`/akun/masuk?next=${encodeURIComponent(target)}`}>Masuk</a></p>
     </Shell>
@@ -122,14 +146,14 @@ export function ForgotForm() {
   }
   return (
     <Shell title="Lupa password" lead="Masukkan email akun kamu. Kami kirim link untuk membuat password baru.">
-      {sent ? <div className="notice" role="status">Kalau email itu terdaftar, link reset password sudah dikirim. Cek inbox dan folder spam.</div> : (
+      {sent ? <p className="msg msg--ok" role="status"><CheckCircle2 aria-hidden="true" /><span>Kalau email itu terdaftar, link reset password sudah dikirim. Cek inbox dan folder spam.</span></p> : (
         <form onSubmit={submit} className="form">
-          <label>Email<input type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} /></label>
-          {err && <div className="error" role="alert">{err}</div>}
-          <button className="primary full" disabled={loading}>{loading ? 'Mengirim…' : 'Kirim link reset'}</button>
+          <label>Email<input type="email" required autoComplete="email" inputMode="email" value={email} onChange={e => setEmail(e.target.value)} /></label>
+          <ErrorMsg text={err} />
+          <button className="btn btn-primary btn-lg btn-block" disabled={loading}>{loading ? 'Mengirim…' : 'Kirim link reset'}</button>
         </form>
       )}
-      <p className="authalt"><a href="/akun/masuk">Kembali ke halaman masuk</a></p>
+      <p className="authalt"><a className="backlink" href="/akun/masuk"><ArrowLeft size={16} aria-hidden="true" /> Kembali ke halaman masuk</a></p>
     </Shell>
   );
 }
@@ -150,9 +174,9 @@ export function ResetForm() {
   return (
     <Shell title="Password baru" lead="Buat password baru untuk akun kamu.">
       <form onSubmit={submit} className="form">
-        <label>Password baru<input type="password" required autoComplete="new-password" minLength={MIN_PASSWORD} value={password} onChange={e => setPassword(e.target.value)} /><small>Minimal {MIN_PASSWORD} karakter.</small></label>
-        {err && <div className="error" role="alert">{err}</div>}
-        <button className="primary full" disabled={loading}>{loading ? 'Menyimpan…' : 'Simpan password'}</button>
+        <PasswordField id="reset-password" label="Password baru" hint={`Minimal ${MIN_PASSWORD} karakter.`} required autoComplete="new-password" minLength={MIN_PASSWORD} value={password} onChange={e => setPassword(e.target.value)} />
+        <ErrorMsg text={err} />
+        <button className="btn btn-primary btn-lg btn-block" disabled={loading}>{loading ? 'Menyimpan…' : 'Simpan password'}</button>
       </form>
     </Shell>
   );

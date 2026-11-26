@@ -1,4 +1,4 @@
-:root{--bg:#fff;--soft:#f5f5f7;--ink:#1d1d1f;--mute:#6e6e73;--muted:#6e6e73;--line:#e8e8ed;--blue:#0a58d6;--navy:#1d1d1f;--orange:#0a58d6;--font-head:var(--font-body)}
+/* Token (:root) pindah ke app/theme.css: satu-satunya blok :root di proyek. */
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:80px}
 body{margin:0;color:var(--ink);font-family:var(--font-body),system-ui,sans-serif;background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.55}
 img{max-width:100%;display:block}a{color:inherit}
@@ -226,7 +226,6 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{overflow-x:clip}
 a,button,summary,label,.sw,.mt{-webkit-tap-highlight-color:rgba(10,88,214,.14);touch-action:manipulation}
 .pillin{position:relative}
-.mnav{display:none}
 
 /* Foto produk: transisi halus + indikator muat */
 .pdpimg{position:relative}
@@ -249,13 +248,8 @@ a,button,summary,label,.sw,.mt{-webkit-tap-highlight-color:rgba(10,88,214,.14);t
 @media(min-width:901px){.buybar-thumb{display:none}.buybar-info{display:contents}}
 @media(prefers-reduced-motion:reduce){.pdpimg img{animation:none}}
 
-/* Menu HP (hamburger) */
+/* Menu HP: gaya laci menu (.mnav*) pindah ke app/theme.css di bawah .toko */
 @media(max-width:900px){
-  .mnav{display:block;position:relative}
-  .mnav-btn{width:44px;height:44px;border-radius:12px;border:0;background:var(--soft);display:grid;place-items:center;color:var(--ink);cursor:pointer}
-  .mnav-panel{position:absolute;right:0;top:calc(100% + 8px);width:min(280px,calc(100vw - 28px));background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.18);padding:8px;display:grid;gap:2px;z-index:60}
-  .mnav-panel a{padding:14px 14px;border-radius:12px;text-decoration:none;font-weight:600;font-size:15px}
-  .mnav-panel a:active,.mnav-panel a:hover{background:var(--soft)}
   .navin{gap:10px}
   .navcta{padding:11px 16px;min-height:44px}
   .filters button,.chip{min-height:44px;display:inline-flex;align-items:center}

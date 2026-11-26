@@ -1,0 +1,523 @@
+/* =====================================================================
+   app/theme.css : fondasi desain toko "Lembar Harga Atelier".
+   Diimpor di app/layout.tsx sesudah globals/shop/store dan SEBELUM CSS per halaman
+   (home, catalog, pdp, account). Satu-satunya blok :root di proyek.
+
+   ATURAN SCOPE: semua gaya toko hidup di bawah .toko (dipasang oleh <StoreShell>).
+   Panel admin (/admin) tidak memakai .toko, jadi tampilannya tidak berubah.
+   Jangan menulis selector toko tanpa awalan .toko dan jangan menambah :root kedua.
+
+   Isi file:
+     1. Token (:root) + nilai toko (.toko)
+     2. Dasar: kontainer, fokus, judul, angka, foto produk
+     3. Komponen dasar: tombol, form, lencana, chip, permukaan, breadcrumb,
+        kepala section, tab, pesan, info ongkir, keadaan kosong, skeleton,
+        stepper jumlah, bar bawah, util
+     4. Chrome: logo, strip atas, header, pencarian, laci menu, footer, tombol WhatsApp
+   ===================================================================== */
+
+/* =====================================================================
+   1. TOKEN
+   ===================================================================== */
+:root{
+  /* ===== A. TOKEN BARU (nama tidak dipakai CSS lama maupun admin) ===== */
+  /* permukaan */
+  --canvas:#FCFAF6;        /* latar halaman toko */
+  --surface:#FFFFFF;       /* input, kartu form, kartu beli, bar bawah */
+  --surface-2:#F4EEE3;     /* panel krem: hero, ringkasan, band, chip Min. order */
+  --surface-3:#EAE2D3;     /* hover di atas krem, skeleton, tombol nonaktif */
+  --photo-bg:#F7F3EC;      /* latar SEMUA wadah foto produk (pasangan mix-blend-mode:multiply) */
+  --line-strong:#8F8778;   /* batas input, checkbox, tombol outline, garis jahitan */
+  /* tinta */
+  --ink-2:#45403A; --ink-deep:#171512;
+  --on-dark:#F3EEE4; --on-dark-mute:#B9B1A3; --on-brand:#FFFFFF;
+  --on-dark-line:rgba(243,238,228,.16);      /* garis tipis di atas latar gelap (footer) */
+  /* brand */
+  --brand:#0F4C3A; --brand-strong:#0A382B; --brand-tint:#E3EEE8; --brand-line:#B9D1C6;
+  --sun:#F2B33D; --sun-strong:#E0A021;       /* kunyit: tanda saja; teks di atasnya wajib --ink */
+  /* status (pasangan teks + latar) */
+  --ok-bg:#E6F3EB; --warn-bg:#FBF0DA; --danger:#B3261E; --danger-bg:#FBE9E7;
+  --wa:#0E7A40; --wa-strong:#0A6233;
+  --overlay:rgba(23,21,18,.5);
+
+  /* tipografi */
+  --font-sans:var(--font-body),system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-serif:var(--font-display),"Iowan Old Style",Georgia,serif;
+  --fs-12:12px; --fs-13:13px; --fs-14:14px; --fs-16:16px;
+  --fs-18:18px; --fs-22:22px; --fs-28:28px; --fs-36:36px;
+  --fs-display:clamp(34px,4.4vw + 14px,60px);   /* h1 hero */
+  --fs-h1:clamp(28px,2vw + 20px,40px);          /* h1 halaman dalam */
+  --fs-h2:clamp(24px,1.6vw + 18px,36px);        /* h2 section */
+  --lh-tight:1.08; --lh-snug:1.3; --lh-body:1.6;
+  --track-display:-.02em; --track-label:.08em;
+  --w-regular:400; --w-medium:500; --w-semi:600; --w-bold:700;
+  --measure:64ch;
+
+  /* spasi (kelipatan 4) */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px;
+  --s-6:32px; --s-7:48px; --s-8:72px; --s-9:96px;
+  --sec-y:56px;              /* jarak section BERANDA; halaman lain pakai --s-7 / --s-8 */
+  --gutter:16px;
+  --container:1280px; --container-text:760px; --container-form:1120px;
+
+  /* bentuk */
+  --r-sm:6px;      /* chip Min. order, thumbnail, lencana kotak */
+  --r-md:10px;     /* tombol, input, select, baris ukuran, foto kartu */
+  --r-lg:16px;     /* panel, galeri, kartu beli, ubin */
+  --r-pill:999px;  /* HANYA lencana status dan chip filter */
+  --bw:1px; --bw-strong:1.5px;
+  --tap:44px; --control-h:48px; --control-h-sm:44px;
+
+  /* elevasi (hanya untuk lapisan mengambang) */
+  --shadow-1:0 1px 2px rgba(27,25,22,.06),0 4px 14px rgba(27,25,22,.06);
+  --shadow-2:0 12px 40px rgba(27,25,22,.16);
+  --shadow-up:0 -6px 20px rgba(27,25,22,.08);
+
+  /* gerak */
+  --ease:cubic-bezier(.2,.7,.2,1); --dur-1:.15s; --dur-2:.25s;
+
+  /* tata letak lengket */
+  --header-h:56px;           /* HP: hanya baris logo yang lengket */
+  --bar-bottom:0px;          /* 72px di halaman ber-bar bawah, lewat .toko.has-bar */
+  --z-header:40; --z-fab:44; --z-bar:45; --z-drawer:70; --z-dialog:80;
+
+  /* ===== B. NAMA LAMA, DIBEKUKAN pada nilai efektif sebelum desain baru (admin tetap sama) ===== */
+  --bg:#fff; --soft:#f4f5f8; --ink:#14171f; --mute:#5d6472; --muted:#5d6472; --line:#e6e8ee;
+  --blue:#0b5bd3; --blue-d:#0847a8; --tint:#eaf1fd; --navy:#1d1d1f; --orange:#0a58d6;
+  --ok:#12805c; --warn:#b25e09; --radius:18px; --shadow:0 10px 30px rgba(16,24,40,.08);
+  --font-head:var(--font-body);
+}
+@media (min-width:640px){ :root{ --gutter:24px; --sec-y:72px } }
+@media (min-width:900px){ :root{ --header-h:72px } }
+@media (min-width:1200px){ :root{ --gutter:32px; --sec-y:96px } }
+
+/* ===== C. NILAI TOKO untuk nama yang bentrok + alias lama ===== */
+.toko{
+  --ink:#1B1916; --mute:#655E54; --line:#E4DBCB; --ok:#1D7A4C; --warn:#8F4C00;
+  --muted:var(--mute); --bg:var(--canvas); --soft:var(--surface-2); --tint:var(--brand-tint);
+  --blue:var(--brand); --blue-d:var(--brand-strong); --navy:var(--ink); --orange:var(--brand);
+  --radius:var(--r-lg); --shadow:var(--shadow-1); --font-head:var(--font-serif);
+  --info:var(--brand-strong); --info-bg:var(--brand-tint); --focus:var(--brand);
+  --stitch:var(--bw-strong) dashed var(--line-strong);
+  display:flex; flex-direction:column; min-height:100dvh;
+  background:var(--canvas); color:var(--ink);
+  font:var(--w-regular) var(--fs-16)/var(--lh-body) var(--font-sans);
+}
+.toko > main{ flex:1 0 auto }
+@media (max-width:899.98px){ .toko.has-bar{ --bar-bottom:72px } }
+body:has(> .toko){ background:var(--canvas) }   /* penyempurnaan: warna area overscroll */
+
+/* =====================================================================
+   2. DASAR
+   ===================================================================== */
+html{ scroll-padding-top:calc(var(--header-h) + 16px) }
+.toko .container{ width:min(var(--container),calc(100% - 2*var(--gutter))); margin-inline:auto }
+.toko :where(a,button,summary,input,select,textarea,[tabindex]):focus-visible{ outline:2px solid var(--focus); outline-offset:2px }
+.toko :is(a,button,summary,label){ -webkit-tap-highlight-color:rgba(15,76,58,.12) }
+.toko button:disabled{ opacity:1; cursor:not-allowed }
+.toko ::selection{ background:var(--brand-line); color:var(--ink) }
+.toko :is(.sfoot,.kontak-band,.on-dark){ --focus:var(--sun) }   /* fokus di atas latar gelap/hijau */
+
+/* tipografi dasar */
+.toko :is(h1,h2){ font-family:var(--font-serif); font-weight:var(--w-medium); letter-spacing:var(--track-display); font-variant-numeric:lining-nums; text-wrap:balance }
+.toko h1{ font-size:var(--fs-h1); line-height:1.1 }
+.toko h2{ font-size:var(--fs-h2); line-height:1.12 }
+.toko h3{ font:var(--w-semi) var(--fs-18)/var(--lh-snug) var(--font-sans); letter-spacing:0 }
+.toko .h-display{ font-size:var(--fs-display); line-height:1.06; max-width:16ch }
+.toko .h-serif{ font:var(--w-semi) var(--fs-22)/1.2 var(--font-serif); letter-spacing:-.01em }   /* nama ubin kategori, judul kartu identitas */
+.toko .lead{ font-size:var(--fs-18); line-height:var(--lh-body); color:var(--ink-2); max-width:52ch }
+.toko :is(.card,.boxed,.panel-soft,.paypanel) > :is(h2,h3){ font:var(--w-semi) var(--fs-18)/var(--lh-snug) var(--font-sans); letter-spacing:0; margin-bottom:var(--s-4) }
+.toko .promo-body h2{ font:var(--w-semi) var(--fs-22)/1.2 var(--font-serif) }
+/* link di dalam teks (tanpa class): hijau botol, garis bawah tipis */
+.toko :where(p,li,dd,address) > a:where(:not([class])){ color:var(--brand); text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px }
+.toko .tlink{ color:var(--brand); text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px }
+
+/* angka: selalu tabular */
+.toko :is(.num,.pc-price,.pricebox,.totalbox,.sums,.ln-total,.hero-stats,.sz,.spectable,.buybar-price,.qty input,.hbadge,.cat-count,.tabs small,.stickybar-total,.pricetable){ font-variant-numeric:tabular-nums lining-nums }
+
+/* FOTO PRODUK: satu aturan untuk semua wadah (--photo-bg + contain + multiply) */
+.toko :is(.pc-img,.pdpimg,.thumbs button,.tile-ph,.hero-art .ph,.lines li > img,.buybar-thumb,.photo){ background:var(--photo-bg) }
+.toko :is(.pc-img,.pdpimg,.thumbs button,.tile-ph,.lines li,.buybar-thumb,.photo) img{ object-fit:contain; mix-blend-mode:multiply }
+
+@media (prefers-reduced-motion:reduce){
+  .toko *,.toko *::before,.toko *::after{ animation:none!important; transition:none!important; scroll-behavior:auto!important }
+  .toko .pc:hover .pc-img img,.toko .tile:hover img{ transform:none!important }
+}
+
+/* PERBAIKAN BUG tata letak: .pdpgrid mobile-first, semua top lengket ikut --header-h */
+.toko .pdpgrid{ display:grid; grid-template-columns:minmax(0,1fr); gap:var(--s-5); align-items:start }
+@media (min-width:900px){
+  .toko .pdpgrid{ grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr); gap:var(--s-7) }
+  .toko :is(.gallery,.orderside){ position:sticky; top:calc(var(--header-h) + var(--s-5)) }
+}
+@media (max-width:899.98px){ .toko :is(.gallery,.orderside){ position:static } }
+
+/* =====================================================================
+   3. KOMPONEN DASAR
+   ===================================================================== */
+
+/* ---------- 3.1 Tombol (.btn + varian; alias lama: .primary .outline .ghost .full .outline.small) ---------- */
+.toko :is(.btn,.primary,.outline,.ghost){ display:inline-flex; align-items:center; justify-content:center; gap:var(--s-2); min-height:var(--control-h); padding:var(--s-2) var(--s-5); border:var(--bw-strong) solid transparent; border-radius:var(--r-md); font:var(--w-semi) var(--fs-16)/1.2 var(--font-sans); text-align:center; text-decoration:none; cursor:pointer; transition:background-color var(--dur-1),border-color var(--dur-1),color var(--dur-1),transform var(--dur-1) }
+.toko :is(.btn,.primary,.outline,.ghost) svg{ flex:none }
+.toko :is(.btn-primary,.primary){ background:var(--brand); border-color:var(--brand); color:var(--on-brand); font-weight:var(--w-bold) }
+.toko :is(.btn-primary,.primary):hover{ background:var(--brand-strong); border-color:var(--brand-strong) }
+.toko :is(.btn-primary,.primary):active{ transform:translateY(1px) }
+.toko :is(.btn-outline,.outline){ background:var(--surface); border-color:var(--line-strong); color:var(--ink) }
+.toko :is(.btn-outline,.outline):hover{ border-color:var(--ink); background:var(--surface) }
+.toko :is(.btn-ghost,.ghost){ background:transparent; color:var(--brand); padding-inline:var(--s-2); text-decoration:underline; text-underline-offset:4px }
+.toko .btn-wa{ background:var(--wa); border-color:var(--wa); color:var(--on-brand); font-weight:var(--w-bold) }
+.toko .btn-wa:hover{ background:var(--wa-strong); border-color:var(--wa-strong) }
+.toko .btn-wa-outline{ background:var(--surface); border-color:var(--line-strong); color:var(--ink) }
+.toko .btn-wa-outline:hover{ border-color:var(--ink) }
+.toko .btn-wa-outline svg{ color:var(--wa) }
+.toko .btn-sun{ background:var(--sun); border-color:var(--sun); color:var(--ink); font-weight:var(--w-bold) }   /* HANYA di atas --brand atau --ink-deep */
+.toko .btn-sun:hover{ background:var(--sun-strong); border-color:var(--sun-strong) }
+.toko .btn-danger{ background:var(--danger); border-color:var(--danger); color:var(--on-brand); font-weight:var(--w-bold) }
+.toko :is(.btn-sm,.outline.small){ min-height:var(--control-h-sm); padding:var(--s-1) var(--s-4); font-size:var(--fs-14) }
+.toko .btn-lg{ min-height:52px }
+.toko :is(.btn-block,.full){ width:100% }
+.toko .btn-icon{ width:var(--tap); height:var(--tap); min-height:0; padding:0; flex:none; border:var(--bw) solid var(--line); background:var(--surface); color:var(--ink) }
+.toko .btn-icon:hover{ border-color:var(--ink) }
+.toko .btn-icon.btn-icon--lg{ width:var(--control-h); height:var(--control-h) }
+.toko .btn-icon.btn-icon--bare{ border-color:transparent; background:transparent }
+.toko .btn-icon.btn-icon--bare:hover{ border-color:transparent; background:var(--surface-2) }
+.toko :is(.btn,.primary,.outline):disabled,.toko .disabledbtn,.toko .disabledbtn:hover{ background:var(--surface-3); border-color:var(--surface-3); color:var(--mute); cursor:not-allowed; transform:none }
+.toko :is(.linkbtn,.backlink,.seclink,.remind,.payfoot a){ display:inline-flex; align-items:center; gap:6px; min-height:var(--tap); padding:0; color:var(--brand); font:var(--w-semi) var(--fs-14)/1.2 var(--font-sans); text-decoration:underline; text-underline-offset:4px; background:none; border:0; cursor:pointer }
+.toko :is(.linkbtn,.backlink,.seclink,.remind,.payfoot a):hover{ color:var(--brand-strong) }
+.toko .linkbtn.danger{ color:var(--danger) }
+.toko .btnrow{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--s-3) var(--s-4) }
+
+/* ---------- 3.2 Form ----------
+   Label adalah grid (teks di atas, kontrol di bawah). Bila label punya penanda opsional, bungkus teksnya:
+   <label><span>Catatan <span class="opt-tag">(opsional)</span></span><textarea …/></label> */
+.toko :is(.form label,.field){ display:grid; gap:6px; font:var(--w-semi) var(--fs-14)/1.3 var(--font-sans); color:var(--ink) }
+.toko :is(.form input:where(:not([type=checkbox],[type=radio])),.form textarea,.form select,.input){ width:100%; min-width:0; min-height:var(--control-h); padding:0 var(--s-4); border:var(--bw) solid var(--line-strong); border-radius:var(--r-md); background:var(--surface); font:var(--w-regular) var(--fs-16)/1.4 var(--font-sans); color:var(--ink) }
+.toko :is(.form textarea,textarea.input){ padding-block:var(--s-3); line-height:1.5; resize:vertical }
+.toko :is(.form input,.form textarea,.form select,.input)::placeholder{ color:var(--mute); opacity:1 }
+.toko :is(.form input,.form textarea,.form select,.input):hover{ border-color:var(--ink) }
+.toko :is(.form input,.form textarea,.form select,.input):is(:focus,:focus-visible){ outline:2px solid var(--focus); outline-offset:2px; border-color:var(--ink) }
+.toko .form :user-invalid{ border-color:var(--danger) }
+.toko :is(.form label small,.hintline,.opt-tag){ font:var(--w-regular) var(--fs-13)/1.4 var(--font-sans); color:var(--mute) }
+.toko .hintline{ margin:0 }
+.toko :is(.form .agree,.cat-check){ display:flex; gap:10px; align-items:center; min-height:var(--tap); padding:0; font-weight:var(--w-regular); font-size:var(--fs-14); line-height:1.5; color:var(--ink-2); cursor:pointer }
+.toko input[type=checkbox]{ width:20px; height:20px; min-height:0; margin:0; padding:0; accent-color:var(--brand); flex:none }
+.toko :is(.cat-sort select,select.input){ appearance:none; -webkit-appearance:none; padding-right:40px; background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231B1916' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center }
+/* kolom password: <div class="pwfield"><input …/><button class="btn btn-icon btn-icon--bare" aria-pressed aria-label="Tampilkan password">…</button></div> */
+.toko .pwfield{ position:relative; display:block }
+.toko .pwfield input{ padding-right:48px }
+.toko .pwfield .btn-icon{ position:absolute; top:2px; right:2px }
+/* kotak cari (header + toolbar katalog): bingkai di pembungkus, input polos */
+.toko :is(.shead-search,.cat-search){ display:flex; align-items:center; gap:var(--s-2); height:var(--control-h-sm); padding:0 var(--s-1) 0 var(--s-3); border:var(--bw) solid var(--line-strong); border-radius:var(--r-md); background:var(--surface); color:var(--mute) }
+.toko :is(.shead-search,.cat-search):hover{ border-color:var(--ink) }
+.toko :is(.shead-search,.cat-search):focus-within{ outline:2px solid var(--focus); outline-offset:2px; border-color:var(--ink) }
+.toko :is(.shead-search,.cat-search) > svg{ flex:none }
+.toko :is(.shead-search,.cat-search) input{ flex:1; min-width:0; height:100%; padding:0; border:0; outline:0; background:transparent; font:var(--w-regular) var(--fs-16)/1.4 var(--font-sans); color:var(--ink) }
+.toko :is(.shead-search,.cat-search) input::placeholder{ color:var(--mute); opacity:1 }
+.toko :is(.shead-search,.cat-search) input::-webkit-search-cancel-button{ display:none }
+
+/* ---------- 3.3 Lencana, penanda grosir, stok, chip ---------- */
+.toko .badge{ display:inline-flex; align-items:center; gap:6px; height:24px; padding:0 10px; border-radius:var(--r-pill); font:var(--w-semi) var(--fs-12)/1 var(--font-sans); white-space:nowrap; background:var(--surface-2); color:var(--ink-2) }
+.toko .badge.big{ height:32px; padding:0 14px; font-size:var(--fs-14) }
+.toko :is(.badge--ok,.badge.st-completed){ background:var(--ok-bg); color:var(--ok) }
+.toko :is(.badge--warn,.badge.st-pending_payment){ background:var(--warn-bg); color:var(--warn) }
+.toko :is(.badge--info,.badge.st-paid,.badge.st-processing,.badge.st-shipped){ background:var(--info-bg); color:var(--info) }
+.toko .badge.badge--danger{ background:var(--danger-bg); color:var(--danger) }
+.toko :is(.badge--neutral,.badge.st-cancelled){ background:var(--surface-2); color:var(--ink-2) }
+.toko .badge.badge--ink{ background:var(--ink); color:var(--on-dark) }
+
+/* "Min. 100 pcs": identik di kartu, PDP, keranjang. Netral krem, bukan amber. */
+.toko .moq{ display:inline-flex; align-items:center; height:22px; padding:0 var(--s-2); border-radius:var(--r-sm); background:var(--surface-2); color:var(--ink); font:var(--w-semi) var(--fs-12)/1 var(--font-sans); white-space:nowrap }
+.toko .band .moq,.toko .paypanel .moq,.toko .panel-soft .moq{ background:var(--surface-3) }
+
+/* stok: selalu titik + teks */
+.toko .stock{ display:inline-flex; align-items:center; gap:6px; font:var(--w-medium) var(--fs-13)/1.2 var(--font-sans); color:var(--ink-2); white-space:nowrap }
+.toko .stock::before{ content:""; width:8px; height:8px; border-radius:50%; background:var(--ok); flex:none }
+.toko .stock.low{ color:var(--warn) } .toko .stock.low::before{ background:var(--warn) }
+.toko .stock.out{ color:var(--mute) } .toko .stock.out::before{ background:var(--line-strong) }
+
+.toko .skutag{ font:var(--w-medium) var(--fs-13)/1.3 var(--font-sans); font-variant-numeric:tabular-nums lining-nums; color:var(--mute); white-space:nowrap }
+.toko .skutag.skutag--box{ padding:2px var(--s-2); border-radius:var(--r-sm); background:var(--surface-2) }
+
+.toko .chips{ display:flex; flex-wrap:wrap; gap:var(--s-2) }
+.toko .chip{ display:inline-flex; align-items:center; gap:6px; min-height:var(--tap); padding:0 var(--s-4); border:var(--bw) solid var(--line-strong); border-radius:var(--r-pill); background:var(--surface); color:var(--ink); font:var(--w-semi) var(--fs-14)/1 var(--font-sans); text-decoration:none; white-space:nowrap; cursor:pointer }
+.toko .chip:hover{ border-color:var(--ink); background:var(--surface) }
+.toko .chip-x svg{ flex:none; color:var(--mute) }
+/* SATU gaya state terpilih untuk semua pilihan */
+.toko :is(.chip.active,.chip.is-active,.chip[aria-pressed=true],.chip[aria-current=page],.sz.on,.mt.on,.qtyquick .on,.cat-side fieldset button.on,.is-selected){ border:var(--bw-strong) solid var(--brand); background:var(--brand-tint); color:var(--brand-strong); box-shadow:none }
+
+/* ---------- 3.4 Permukaan (hanya dua) + band + nota ---------- */
+.toko :is(.card,.boxed){ display:block; background:var(--surface); border:var(--bw) solid var(--line); border-radius:var(--r-lg); padding:var(--s-5) }
+.toko :is(.panel-soft,.paypanel){ background:var(--surface-2); border:0; border-radius:var(--r-lg); padding:var(--s-5); display:grid; gap:var(--s-4) }
+.toko .band{ background:var(--surface-2); padding-block:var(--sec-y) }
+@media (max-width:639.98px){ .toko :is(.card,.boxed,.panel-soft,.paypanel){ padding:var(--s-4) } }
+
+/* tepi gerigi nota: HANYA panel ringkasan di keranjang, checkout, halaman pesanan (class "receipt" di samping .paypanel).
+   Bila di DPR 1,25/1,5 atau Safari ada celah/gigi terpotong: hapus class receipt, jangan diakali dengan gradien. */
+.toko .receipt{ position:relative; border-radius:var(--r-lg) var(--r-lg) 0 0; margin-bottom:var(--s-2) }
+.toko .receipt::after{ content:""; position:absolute; left:0; right:0; top:100%; height:8px; background:inherit;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' preserveAspectRatio='none'%3E%3Cpath d='M0 0h12L6 8z'/%3E%3C/svg%3E") 0 0/12px 8px round;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' preserveAspectRatio='none'%3E%3Cpath d='M0 0h12L6 8z'/%3E%3C/svg%3E") 0 0/12px 8px round }
+
+/* garis: jahitan (hanya 3 tempat: strip statistik hero, bawah .pricebox, atas .sums .grand) dan garis biasa */
+.toko .stitch-top{ border-top:var(--stitch) }
+.toko .stitch-block{ border-block:var(--stitch) }
+.toko .rule-top{ border-top:var(--bw) solid var(--line) }
+.toko .rule-ink{ border-top:var(--bw) solid var(--ink) }
+
+/* ---------- 3.5 Breadcrumb, kepala section, tab ---------- */
+.toko .crumbs{ display:flex; align-items:center; gap:var(--s-1); flex-wrap:wrap; margin:0 0 var(--s-3); padding:0; list-style:none; font:var(--w-regular) var(--fs-13)/1.2 var(--font-sans); color:var(--mute) }
+.toko .crumbs a{ display:inline-flex; align-items:center; min-height:var(--tap); color:var(--mute); text-decoration:none }
+.toko .crumbs a:hover{ color:var(--ink); text-decoration:underline }
+.toko .crumbs svg{ flex:none }
+.toko .crumbs :is([aria-current],span:last-child){ color:var(--ink); font-weight:var(--w-semi); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:60vw }
+
+.toko .sec{ padding-top:var(--sec-y) }
+.toko .sechead{ display:flex; justify-content:space-between; align-items:flex-end; gap:var(--s-4) var(--s-5); flex-wrap:wrap; margin-bottom:var(--s-6); padding-top:var(--s-5); border-top:var(--bw) solid var(--ink) }
+.toko :is(.seclabel,.eyebrow){ display:flex; align-items:center; gap:var(--s-2); margin:0 0 var(--s-3); font:var(--w-semi) var(--fs-12)/1.3 var(--font-sans); letter-spacing:var(--track-label); text-transform:uppercase; color:var(--mute) }
+.toko :is(.seclabel,.eyebrow)::before{ content:""; width:23px; height:5px; flex:none; background:radial-gradient(circle at 2.5px 50%,var(--sun-strong) 2.5px,transparent 3px) 0 0/9px 5px repeat-x }   /* tiga titik: pusat 2.5, 11.5, 20.5px supaya titik ketiga utuh di wadah 23px */
+.toko .seclabel.seclabel--plain::before{ display:none }
+.toko :is(.kontak-band,.on-dark,.sfoot) .seclabel{ color:var(--on-dark-mute) }
+.toko :is(.kontak-band,.on-dark,.sfoot) .seclabel::before{ background-image:radial-gradient(circle at 2.5px 50%,var(--sun) 2.5px,transparent 3px) }
+.toko .secsub{ margin:var(--s-3) 0 0; max-width:56ch; color:var(--ink-2) }
+
+/* tab kategori: <nav class="tabs"><a aria-current="page">Semua <small>140</small></a>…</nav> */
+.toko .tabs{ display:flex; margin:0; padding:0; list-style:none; border-bottom:var(--bw) solid var(--line); overflow-x:auto; scrollbar-width:none }
+.toko .tabs::-webkit-scrollbar{ display:none }
+.toko .tabs a{ flex:none; display:inline-flex; align-items:center; gap:6px; height:var(--control-h); padding:0 var(--s-4); font:var(--w-semi) var(--fs-14)/1 var(--font-sans); color:var(--ink); text-decoration:none; white-space:nowrap }
+.toko .tabs a:hover{ color:var(--brand-strong) }
+.toko .tabs a:focus-visible{ outline-offset:-2px }
+.toko .tabs small{ font:var(--w-regular) var(--fs-13)/1 var(--font-sans); color:var(--mute) }
+.toko .tabs a[aria-current=page]{ color:var(--brand-strong); box-shadow:inset 0 -2px 0 var(--brand) }
+
+/* ---------- 3.6 Pesan, info ongkir, keadaan kosong, skeleton ---------- */
+/* Pola baru: <p class="msg msg--ok" role="status"><CheckCircle2 size={18}/><span>Teks…</span></p>
+   Class lama (.notice .error .addednote .qtynote) memakai warna yang sama tetapi tetap blok, supaya teks campuran tidak pecah. */
+.toko :is(.msg,.notice,.error,.addednote,.qtynote){ padding:var(--s-3) var(--s-4); border-radius:var(--r-md); background:var(--info-bg); color:var(--ink); font:var(--w-regular) var(--fs-14)/1.5 var(--font-sans); max-width:none }
+.toko .msg{ display:flex; align-items:flex-start; gap:var(--s-3); margin:0 }
+.toko .msg > svg{ flex:none; width:18px; height:18px; margin-top:2px; color:var(--info) }
+.toko .msg > :not(svg){ min-width:0; flex:1 }
+.toko :is(.msg,.notice,.error,.addednote,.qtynote) a:where(:not(.btn)){ color:var(--brand); font-weight:var(--w-semi); text-decoration:underline; text-underline-offset:3px }
+.toko :is(.msg--ok,.addednote){ background:var(--ok-bg) } .toko .msg--ok > svg{ color:var(--ok) }
+.toko :is(.msg--warn,.addednote.warn,.qtynote){ background:var(--warn-bg) } .toko .msg--warn > svg{ color:var(--warn) }
+.toko :is(.msg--danger,.error){ background:var(--danger-bg) } .toko .msg--danger > svg{ color:var(--danger) }
+
+/* <ShipNote settings={settings} compact? /> */
+.toko .shipnote{ display:flex; align-items:flex-start; gap:var(--s-3); margin:0; padding:var(--s-3) var(--s-4); border-radius:var(--r-md); background:var(--surface-2); color:var(--ink-2); font:var(--w-regular) var(--fs-13)/1.5 var(--font-sans) }
+.toko :is(.panel-soft,.paypanel,.band) .shipnote{ background:var(--surface) }
+.toko .shipnote > svg{ flex:none; margin-top:1px; color:var(--ink) }
+.toko .shipnote p{ margin:0; min-width:0 }
+.toko .shipnote b{ display:block; font:var(--w-semi) var(--fs-14)/1.4 var(--font-sans); color:var(--ink) }
+
+/* keadaan kosong: [EmptyArt] h1/h2, satu kalimat, satu .btn-primary, tiga .chip kategori dalam .chips */
+.toko :is(.emptystate,.empty){ display:grid; justify-items:center; gap:var(--s-4); padding:calc(var(--s-7) + var(--s-2)) var(--s-4); text-align:center; background:none; border-radius:0; color:var(--ink-2) }
+.toko :is(.emptystate,.empty) :is(h1,h2){ font-size:var(--fs-28); line-height:1.15; color:var(--ink) }
+.toko :is(.emptystate,.empty) p{ margin:0; max-width:44ch }
+.toko :is(.emptystate,.empty) .chips{ justify-content:center }
+.toko .empty-art{ width:120px; height:120px }
+
+.toko .skel{ display:block; background:var(--surface-3); border-radius:var(--r-md); animation:toko-pulse 1.2s ease-in-out infinite }
+@keyframes toko-pulse{ 50%{ opacity:.6 } }
+
+/* ---------- 3.7 Stepper jumlah dan bar bawah ---------- */
+.toko .qty{ display:inline-flex; align-items:stretch; width:fit-content; max-width:100%; height:var(--control-h); border:var(--bw) solid var(--line-strong); border-radius:var(--r-md); background:var(--surface); overflow:hidden }
+.toko .qty:focus-within{ outline:2px solid var(--focus); outline-offset:2px; border-color:var(--ink) }
+.toko .qty button{ display:grid; place-items:center; width:var(--control-h); height:auto; flex:none; border:0; background:var(--surface); color:var(--ink); cursor:pointer }
+.toko .qty button:first-child{ border-right:var(--bw) solid var(--line) }
+.toko .qty button:last-child{ border-left:var(--bw) solid var(--line) }
+.toko .qty button:hover{ background:var(--surface-2) }
+.toko .qty button:disabled{ background:var(--surface); color:var(--line-strong); cursor:not-allowed }
+.toko .qty :is(button,input):focus-visible{ outline:0 }
+.toko .qty input{ width:80px; height:auto; min-height:0; padding:0; border:0; border-radius:0; background:transparent; text-align:center; font:var(--w-semi) var(--fs-16)/1 var(--font-sans); color:var(--ink); -moz-appearance:textfield; appearance:textfield }
+.toko .qty input::-webkit-outer-spin-button,.toko .qty input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0 }
+
+/* bar bawah HP: halaman pemakai memberi prop bar ke <StoreShell> dan main diberi
+   padding-bottom:calc(var(--bar-bottom) + var(--s-7)) */
+.toko .stickybar{ position:fixed; inset:auto 0 0 0; z-index:var(--z-bar); display:flex; align-items:center; gap:var(--s-3); padding:var(--s-3) var(--gutter) calc(var(--s-3) + env(safe-area-inset-bottom)); background:var(--surface); border-top:var(--bw) solid var(--line); box-shadow:var(--shadow-up); -webkit-backdrop-filter:none; backdrop-filter:none }
+.toko .stickybar-info{ flex:1; min-width:0; display:grid; gap:2px }
+.toko .stickybar-total{ font:var(--w-bold) var(--fs-18)/1.2 var(--font-sans); color:var(--ink) }
+.toko .stickybar-sub{ font:var(--w-regular) var(--fs-12)/1.3 var(--font-sans); color:var(--mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.toko .stickybar :is(.btn,.primary,.outline){ flex:none }
+@media (min-width:900px){ .toko .stickybar{ display:none } }
+
+/* ---------- 3.8 Util ---------- */
+.toko .vh{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0 }
+.toko .container.container--text{ max-width:var(--container-text) }
+/* .container--form (keranjang, checkout, akun) selebar .container biasa, supaya tepi kiri isi sejajar logo dan
+   tepi kanannya sejajar ikon keranjang di header. Lebar kolom isi diatur grid masing-masing halaman (account.css). */
+.toko .measure{ max-width:var(--measure) }
+.toko .mute{ color:var(--mute) }
+.toko .ink-2{ color:var(--ink-2) }
+.toko .nowrap{ white-space:nowrap }
+.toko .truncate{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.toko .scroller{ display:flex; gap:var(--s-3); overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; margin-inline:calc(var(--gutter)*-1); padding-inline:var(--gutter); scroll-padding-inline:var(--gutter) }
+.toko .scroller::-webkit-scrollbar{ display:none }
+.toko .scroller > *{ scroll-snap-align:start; flex:none }
+@media (max-width:899.98px){ .toko .only-lg{ display:none!important } }
+@media (min-width:900px){ .toko .only-sm{ display:none!important } }
+
+/* =====================================================================
+   4. CHROME
+   ===================================================================== */
+
+/* ---------- 4.1 Skip link ---------- */
+.toko .skip{ position:absolute; left:-999px; top:var(--s-2); z-index:var(--z-dialog); padding:var(--s-3) var(--s-4); border-radius:var(--r-md); background:var(--ink); color:var(--on-dark); font:var(--w-semi) var(--fs-14)/1.2 var(--font-sans); text-decoration:none }
+.toko .skip:focus{ left:var(--s-2); outline-color:var(--sun) }
+
+/* ---------- 4.2 Logo ---------- */
+.toko .brand{ display:inline-flex; align-items:center; gap:var(--s-3); min-height:var(--tap); min-width:0; flex:none; text-decoration:none; color:var(--ink); font-size:inherit; font-weight:inherit; letter-spacing:0 }
+.toko .logo-mark{ flex:none }                                   /* di luar .brand ukurannya ikut prop size <LogoMark size={48} /> */
+.toko .brand .logo-mark{ width:36px; height:36px }
+.toko .brand-text{ display:grid; line-height:1.1 }
+.toko .brand-name{ font:var(--w-semi) 20px/1.1 var(--font-serif); letter-spacing:-.01em; white-space:nowrap }
+.toko .brand-desc{ font:var(--w-semi) var(--fs-12)/1.3 var(--font-sans); letter-spacing:var(--track-label); text-transform:uppercase; color:var(--mute); white-space:nowrap }
+.toko .brand--light{ color:var(--on-dark); --logo-bag:var(--on-dark) }
+.toko .brand--light .brand-desc{ color:var(--on-dark-mute) }
+.toko .shead .brand{ font-size:inherit }
+@media (max-width:419.98px){ .toko .brand-desc{ display:none } .toko .brand-name{ font-size:var(--fs-18) } .toko .brand .logo-mark{ width:32px; height:32px } }
+
+/* ---------- 4.3 Strip atas (tidak lengket) ---------- */
+.toko .topstrip{ background:var(--surface-2); color:var(--ink-2); font:var(--w-regular) var(--fs-13)/1.2 var(--font-sans) }
+.toko .topstrip .container{ display:flex; align-items:center; justify-content:center; gap:var(--s-5); height:32px; min-height:0 }
+.toko .topstrip p{ margin:0; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.toko .topstrip .topstrip-from{ display:none; align-items:center; gap:6px }
+.toko .topstrip-from svg{ flex:none }
+.toko .topstrip-from span{ min-width:0; overflow:hidden; text-overflow:ellipsis }
+@media (max-width:359.98px){ .toko .topstrip-more{ display:none } }   /* teks lengkap 308px, muat di 360px */
+@media (min-width:900px){
+  .toko .topstrip .container{ justify-content:space-between }
+  .toko .topstrip .topstrip-from{ display:flex }
+  .toko .topstrip .topstrip-fact{ flex:none }
+}
+
+/* ---------- 4.4 Header (lengket: HP 56px, desktop 72px) ---------- */
+.toko .shead{ position:sticky; top:0; z-index:var(--z-header); background:var(--canvas); border-bottom:var(--bw) solid var(--line); -webkit-backdrop-filter:none; backdrop-filter:none }
+.toko .shead-main{ display:flex; align-items:center; flex-wrap:nowrap; gap:var(--s-3); height:var(--header-h); padding:0 }
+.toko .shead .navright{ display:flex; align-items:center; gap:var(--s-1); margin-left:auto; flex:none }
+.toko .shead-main .shead-search{ display:none }
+.toko .shead-wa{ display:none }
+.toko .shead-msearch{ padding-block:var(--s-2); background:var(--canvas) }
+@media (min-width:900px){
+  .toko .shead-main{ gap:var(--s-5) }
+  .toko .shead .navright{ gap:var(--s-3) }
+  .toko .shead-main .shead-search{ display:flex; flex:1; max-width:560px; height:var(--control-h) }
+  .toko .shead-wa{ display:inline-flex }
+  .toko .shead-msearch{ display:none }
+}
+/* tombol kirim pencarian: ikon 36px, area ketuk diperluas sampai 44px */
+.toko .shead-search button{ position:relative; display:grid; place-items:center; flex:none; width:36px; height:36px; padding:0; border:0; border-radius:var(--r-sm); background:transparent; color:var(--ink); cursor:pointer }
+.toko .shead-search button::after{ content:""; position:absolute; inset:-4px }
+.toko .shead-search button:hover{ background:var(--surface-2) }
+
+/* akun + keranjang */
+.toko .hactions{ display:flex; align-items:center; gap:var(--s-1) }
+.toko .hbtn{ position:relative; display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--s-1); width:var(--tap); height:var(--tap); padding:0; border-radius:var(--r-md); color:var(--ink); text-decoration:none; transition:background-color var(--dur-1) }
+.toko .hbtn:hover{ background:var(--surface-2) }
+.toko .hbtn-label{ display:none; font:var(--w-medium) var(--fs-12)/1 var(--font-sans) }
+.toko .hbadge{ position:absolute; top:2px; left:calc(50% + 2px); right:auto; display:grid; place-items:center; min-width:18px; height:18px; padding:0 var(--s-1); border-radius:var(--r-pill); background:var(--sun); color:var(--ink); font:var(--w-bold) var(--fs-12)/1 var(--font-sans) }
+@media (min-width:900px){
+  .toko .hbtn{ width:auto; min-width:56px; height:var(--control-h); padding:0 var(--s-2) }
+  .toko .hbtn-label{ display:block }
+  .toko .hbadge{ top:0 }
+}
+
+/* header ringkas (checkout): logo kiri, dua link kanan */
+.toko .shead--min .navright{ gap:var(--s-4) }
+.toko .shead--min .linkbtn{ min-width:var(--tap); justify-content:center; white-space:nowrap }
+.toko .shead-help svg{ color:var(--wa) }
+.toko .shead-long{ display:none }
+@media (min-width:640px){ .toko .shead-long{ display:inline } .toko .shead-short{ display:none } .toko .shead--min .navright{ gap:var(--s-5) } }
+
+/* baris kategori (hanya >= 900, ikut menggulung) */
+.toko .shead-nav{ display:none }
+@media (min-width:900px){
+  .toko .shead-nav{ display:block; background:var(--canvas); border-top:0; border-bottom:var(--bw) solid var(--line) }
+  .toko .shead-nav .container{ display:flex; justify-content:space-between; align-items:flex-start; gap:var(--s-5); height:var(--control-h); overflow:visible }
+  .toko .shead-cats{ display:flex; flex:none; gap:0; margin-left:calc(var(--s-3)*-1 - 2px) }
+  /* link admin yang tidak muat turun ke baris kedua lalu terpotong rapi, bukan menabrak kategori */
+  .toko .shead-links{ display:flex; flex-wrap:wrap; justify-content:flex-end; gap:0; min-width:0; height:var(--control-h); overflow:hidden; margin-right:calc(var(--s-3)*-1) }
+  /* garis aktif/hover digambar tepat selebar teks (lebar link dikurangi padding kiri-kanan) */
+  .toko .shead-nav a{ --pad:14px; --mark:transparent; display:inline-flex; align-items:center; height:var(--control-h); min-height:var(--tap); padding:0 var(--pad); border-radius:0; background:linear-gradient(var(--mark),var(--mark)) center bottom/calc(100% - 2*var(--pad)) 2px no-repeat; color:var(--ink); font:var(--w-semi) var(--fs-14)/1 var(--font-sans); text-decoration:none; white-space:nowrap }
+  .toko .shead-links a{ --pad:var(--s-3); font-weight:var(--w-medium); color:var(--mute) }
+  .toko .shead-nav a:hover{ --mark:var(--line-strong); color:var(--brand-strong) }
+  .toko .shead-nav a[aria-current=page]{ --mark:var(--brand); color:var(--brand-strong) }
+  .toko .shead-nav a:focus-visible{ outline-offset:-2px }
+}
+
+/* halaman masuk/daftar/lupa/reset: header ringkas (penyempurnaan; tanpa :has header tampil penuh) */
+.toko:has(.authgrid) :is(.shead-search,.shead-msearch,.shead-nav,.topstrip){ display:none }
+
+/* ---------- 4.5 Laci menu HP ---------- */
+.toko .mnav{ display:block; flex:none; margin-left:calc(var(--s-2)*-1 - 2px) }
+.toko .mnav-btn{ display:grid; place-items:center; width:var(--tap); height:var(--tap); padding:0; border:0; border-radius:var(--r-md); background:transparent; color:var(--ink); cursor:pointer }
+.toko .mnav-btn:hover{ background:var(--surface-2) }
+.toko .mnav-overlay{ position:fixed; inset:0; z-index:calc(var(--z-drawer) - 1); background:var(--overlay); animation:toko-fade var(--dur-2) var(--ease) }
+.toko .mnav-panel{ position:fixed; inset:0 auto 0 0; z-index:var(--z-drawer); display:flex; flex-direction:column; width:min(86vw,360px); background:var(--canvas); color:var(--ink); box-shadow:var(--shadow-2); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; animation:toko-drawer var(--dur-2) var(--ease) }
+.toko .mnav-head{ position:sticky; top:0; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:var(--s-3); flex:none; height:56px; padding:0 var(--s-2) 0 var(--s-4); background:var(--canvas); border-bottom:var(--bw) solid var(--line) }
+.toko .mnav-body{ display:grid; gap:var(--s-5); padding:var(--s-5) var(--s-4) }
+.toko .mnav-group .seclabel{ margin-bottom:var(--s-1) }
+.toko .mnav-group a{ display:flex; align-items:center; justify-content:space-between; gap:var(--s-3); min-height:var(--control-h); border-bottom:var(--bw) solid var(--line); color:var(--ink); font:var(--w-medium) var(--fs-16)/1.3 var(--font-sans); text-decoration:none }
+.toko .mnav-group a svg{ flex:none; color:var(--mute) }
+.toko .mnav-group a:hover{ color:var(--brand-strong) }
+.toko .mnav-foot{ display:grid; gap:var(--s-3); margin-top:auto; padding:var(--s-4) var(--s-4) calc(var(--s-5) + env(safe-area-inset-bottom)) }
+.toko .mnav-foot p{ margin:0; font:var(--w-regular) var(--fs-13)/1.5 var(--font-sans); color:var(--mute) }
+@keyframes toko-drawer{ from{ transform:translateX(-100%) } to{ transform:none } }
+@keyframes toko-fade{ from{ opacity:0 } to{ opacity:1 } }
+@media (min-width:900px){ .toko :is(.mnav,.mnav-panel,.mnav-overlay){ display:none } }
+
+/* ---------- 4.6 Footer ---------- */
+.toko .sfoot{ margin-top:var(--s-8); padding:var(--s-8) 0 calc(var(--s-6) + var(--bar-bottom)); background:var(--ink-deep); color:var(--on-dark); font-size:var(--fs-14); line-height:var(--lh-body) }
+.toko .sfoot.sfoot--flush{ margin-top:0 }
+.toko .sfoot a{ color:var(--on-dark); opacity:.85; text-decoration:none; display:inline-flex; align-items:center; gap:var(--s-2); min-height:var(--tap) }
+.toko .sfoot a:hover{ opacity:1; color:var(--on-dark); text-decoration:underline }
+.toko .sfoot p{ margin:0; max-width:36ch; color:var(--on-dark-mute) }
+.toko .sfoot .brand{ opacity:1; color:var(--on-dark) }
+.toko .sfoot .brand:hover{ text-decoration:none }
+.toko .sfoot a.btn-sun{ opacity:1; color:var(--ink); gap:var(--s-2); min-height:var(--control-h) }
+.toko .sfoot a.btn-sun:hover{ color:var(--ink); text-decoration:none }
+/* baris ajakan (tidak tampil di beranda: cta={false}) */
+.toko .sfoot-cta{ display:flex; align-items:center; justify-content:space-between; gap:var(--s-4) var(--s-5); flex-wrap:wrap; margin-bottom:var(--s-6); padding-bottom:var(--s-6); border-bottom:var(--bw) solid var(--on-dark-line) }
+.toko .sfoot .sfoot-cta-title{ max-width:none; color:var(--on-dark); font:var(--w-medium) var(--fs-22)/1.2 var(--font-serif); letter-spacing:-.01em }
+/* grid kolom.
+   HP      : satu grid dua kolom untuk semuanya. Produk + Informasi berdampingan, Bantuan selebar penuh dengan
+             tautannya di dua kolom yang sama, jadi tidak ada kolom yatim. Celah kolom kecil (--s-2) supaya label
+             terpanjang muat satu baris di 360px.
+   Tablet  : tiga kolom sama lebar di bawah blok brand.
+   Desktop : brand + tiga kolom dalam satu baris. */
+.toko .sfoot-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--s-6) var(--s-2) }
+.toko .sfoot-brand{ grid-column:1/-1; display:grid; gap:var(--s-3); justify-items:start; align-content:start }
+.toko .sfoot-legal{ display:grid; gap:0; justify-items:start; margin-top:var(--s-2) }
+.toko .sfoot-legal b{ font:var(--w-semi) var(--fs-14)/1.4 var(--font-sans); color:var(--on-dark) }
+.toko .sfoot address{ display:flex; align-items:flex-start; gap:var(--s-2); max-width:36ch; margin:var(--s-2) 0 0; font-style:normal; color:var(--on-dark-mute) }
+.toko .sfoot address svg{ flex:none; margin-top:3px; color:var(--on-dark-mute) }
+.toko .sfoot-wa svg{ flex:none; color:var(--on-dark-mute) }
+.toko .sfoot nav{ display:flex; flex-direction:column; align-items:flex-start; gap:0; min-width:0 }
+.toko .sfoot nav h2{ margin:0 0 var(--s-2); font:var(--w-semi) var(--fs-12)/1.3 var(--font-sans); letter-spacing:var(--track-label); text-transform:uppercase; color:var(--on-dark-mute) }
+.toko .sfoot nav a:hover{ color:var(--on-dark) }
+@media (max-width:639.98px){
+  .toko .sfoot nav.sfoot-help{ grid-column:1/-1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:var(--s-2); justify-items:start }
+  .toko .sfoot-help h2{ grid-column:1/-1 }
+}
+@media (min-width:360px) and (max-width:639.98px){ .toko .sfoot nav a{ white-space:nowrap } }
+/* baris bawah (ruang kanan disisakan untuk tombol WhatsApp mengambang) */
+.toko .sfoot-bottom{ display:flex; flex-direction:column; gap:var(--s-1); margin-top:var(--s-6); padding:var(--s-5) calc(var(--fab) + var(--s-4)) 0 0; border-top:var(--bw) solid var(--on-dark-line); font-size:var(--fs-13); color:var(--on-dark-mute) }
+@media (min-width:640px){
+  .toko .sfoot-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--s-6) var(--s-5) }
+}
+@media (min-width:900px){
+  .toko .sfoot-grid{ grid-template-columns:1.4fr 1fr 1fr 1fr; gap:var(--s-7) }
+  .toko .sfoot-brand{ grid-column:auto }
+  .toko .sfoot-bottom{ flex-direction:row; justify-content:space-between; gap:var(--s-5); padding-right:120px }
+}
+
+/* ---------- 4.7 Tombol WhatsApp mengambang ----------
+   --fab = sisi tombol: 44px di HP (menutupi isi sesedikit mungkin), 52px mulai 640px.
+   Di halaman ber-bar bawah (.toko.has-bar: halaman produk, keranjang) tombol ini disembunyikan di bawah 900px,
+   karena bar bawah dan tautan WhatsApp di halaman itu sudah menjadi pintunya; di desktop tetap tampil. */
+.toko{ --fab:44px }
+@media (min-width:640px){ .toko{ --fab:52px } }
+.toko .wa-fab{ position:fixed; right:var(--gutter); bottom:calc(var(--bar-bottom) + var(--s-4) + env(safe-area-inset-bottom)); z-index:var(--z-fab); display:inline-flex; align-items:center; justify-content:center; gap:var(--s-2); height:var(--fab); min-width:var(--fab); padding:0; border-radius:var(--r-pill); background:var(--wa); color:var(--on-brand); box-shadow:var(--shadow-2); text-decoration:none; font:var(--w-bold) var(--fs-14)/1 var(--font-sans); transition:background-color var(--dur-1) }
+.toko .wa-fab:hover{ background:var(--wa-strong) }
+.toko .wa-fab span{ display:none }
+.toko .wa-fab svg{ flex:none }
+@media (max-width:899.98px){ .toko.has-bar .wa-fab{ display:none } }
+@media (min-width:900px){ .toko .wa-fab{ padding:0 var(--s-4) } .toko .wa-fab span{ display:inline } }

@@ -34,8 +34,9 @@ const nextConfig = {
       { protocol: 'https', hostname: 'i.imgur.com' },
     ],
   },
-  // Sisipkan CSS langsung di HTML → tidak ada request CSS yang memblokir render
-  experimental: { inlineCss: true },
+  // CSS sengaja TIDAK disisipkan ke HTML (experimental.inlineCss mati): lembar gaya toko besar dan dipakai
+  // semua halaman, jadi lebih hemat sebagai file statis yang di-cache sekali daripada terulang di tiap dokumen
+  // (dengan inlineCss tiap halaman membawa CSS dua kali: di <style> dan di payload RSC).
   async headers() {
     return [
       {

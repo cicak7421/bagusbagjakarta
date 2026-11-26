@@ -1,0 +1,346 @@
+/* =====================================================================
+   app/catalog.css
+   Kartu produk + grid, katalog (/produk), kategori (/kategori/[slug]),
+   blog, halaman info, dan 404.
+
+   Aturan file ini:
+   - Diimpor SETELAH theme.css. Semua selector diawali .toko, jadi /admin tidak tersentuh.
+   - Nilai diambil dari token theme.css. Ukuran khusus bagian ini didefinisikan
+     sebagai custom property lokal di blok pemakainya (bukan :root).
+   - Breakpoint: 640px, 900px, 1200px (mobile-first).
+   - Aturan lama di store.css / globals.css untuk selector yang sama sengaja
+     ditimpa di sini (bukan dihapus) supaya aman dikerjakan paralel.
+   ===================================================================== */
+
+/* =====================================================================
+   1. KARTU PRODUK + GRID
+   Dipakai di katalog, beranda (rak), dan halaman produk (produk serupa).
+   Tanpa bingkai, tanpa bayangan: foto menyatu dengan wadah, teks di bawahnya.
+   ===================================================================== */
+.toko .pgrid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--s-5) var(--s-3) }
+@media (min-width:640px){ .toko .pgrid{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--s-6) calc(var(--s-4) + var(--s-1)) } }
+@media (min-width:1200px){ .toko .pgrid{ grid-template-columns:repeat(4,minmax(0,1fr)) } }
+
+.toko .pc{ --pc-zoom:.5s; position:relative; isolation:isolate; display:flex; flex-direction:column; min-width:0 }
+.toko .pc-img{ position:relative; display:block; aspect-ratio:1/1; border-radius:var(--r-md); overflow:hidden }
+/* Kartu memakai cover (halaman produk dan thumbnail tetap contain dari theme.css): sebagian foto tidak persegi
+   (kebanyakan potret 3:4), dan dengan contain muncul dua pita di kiri-kanan foto. Titik potong sedikit di atas
+   tengah supaya pegangan tas tetap terlihat. Foto persegi tidak terpengaruh.
+   Selector .pc .pc-img: aturan foto di theme.css memakai :is(…, .thumbs button, …) sehingga bobotnya (0,2,2). */
+.toko .pc-img img{ position:absolute; inset:0; width:100%; height:100%; transition:transform var(--pc-zoom) var(--ease),opacity var(--dur-2) }
+.toko .pc .pc-img img{ object-fit:cover; object-position:center 35% }
+.toko .pc-img .pc-img2{ opacity:0 }
+.toko .pc.is-out .pc-img img:not(.pc-img2){ opacity:.6 }
+
+/* penanda di atas foto: "Stok habis" kiri bawah, ikon "ada foto lain" kanan bawah */
+.toko .pc-flag{ position:absolute; left:var(--s-2); bottom:var(--s-2); top:auto; z-index:1 }
+.toko .pc-count{ position:absolute; right:var(--s-2); bottom:var(--s-2); z-index:1; display:grid; place-items:center; width:var(--s-5); height:var(--s-5); padding:0; border-radius:var(--r-sm); background:var(--canvas); color:var(--ink-2); font-size:var(--fs-12) }
+
+.toko .pc-body{ display:grid; gap:var(--s-1); padding:var(--s-3) 0 0 }
+.toko .pc-cat{ margin:0; font:var(--w-medium) var(--fs-13)/1.3 var(--font-sans); color:var(--mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.toko .pc-sizes{ display:none }
+.toko .pc-name{ margin:0; font:var(--w-semi) var(--fs-14)/1.3 var(--font-sans); letter-spacing:0; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.6em }
+.toko .pc-name a{ color:inherit; text-decoration:none }
+.toko .pc-name a::after{ content:""; position:absolute; inset:0; z-index:2 }   /* seluruh kartu jadi satu target klik */
+.toko .pc-price{ margin:0; font:var(--w-bold) var(--fs-16)/1.2 var(--font-sans); letter-spacing:0; color:var(--ink) }
+.toko .pc-price small{ font:var(--w-medium) var(--fs-13)/1 var(--font-sans); color:var(--mute) }
+.toko .pc-price.ask{ font:var(--w-semi) var(--fs-14)/1.3 var(--font-sans); color:var(--ink-2) }
+.toko .pc-meta{ display:flex; flex-wrap:wrap; align-items:center; gap:6px var(--s-2); margin-top:var(--s-1); font:var(--w-regular) var(--fs-13)/1.3 var(--font-sans); color:var(--mute) }
+.toko .pc-ask{ font:var(--w-regular) var(--fs-13)/1.3 var(--font-sans); color:var(--mute) }
+@media (min-width:640px){
+  .toko .pc-name{ font-size:var(--fs-16) }
+  .toko .pc-price{ font-size:var(--fs-18) }
+  .toko .pc-sizes{ display:inline }
+}
+
+/* hover hanya di perangkat berkursor: foto membesar tipis, foto kedua menggantikan foto pertama, nama bergaris bawah */
+@media (hover:hover){
+  .toko .pc:hover .pc-img img{ transform:scale(1.03) }
+  .toko .pc:hover .has2 img:not(.pc-img2){ opacity:0 }
+  .toko .pc:hover .has2 .pc-img2{ opacity:1 }
+  .toko .pc:hover .pc-name a{ color:inherit; text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px }
+}
+/* layar sentuh tidak punya hover: foto kedua tidak dirender, jadi tidak ikut diunduh (loading="lazy") */
+@media (hover:none){ .toko .pc-img .pc-img2{ display:none } }
+
+/* fokus keyboard: cincin di seluruh kartu. Tanpa :has, cincin bawaan di link nama tetap tampil. */
+@supports selector(:has(a)){
+  .toko .pc-name a:focus-visible{ outline:0 }
+  .toko .pc:has(a:focus-visible){ outline:2px solid var(--focus); outline-offset:var(--s-1); border-radius:var(--r-md) }
+}
+
+/* =====================================================================
+   2. KEPALA HALAMAN (katalog, kategori, blog)
+   ===================================================================== */
+.toko :is(.catpage,.docpage,.notfound){ padding-top:var(--s-2); padding-bottom:var(--s-5); min-height:0 }
+/* breadcrumb satu baris: yang terpotong hanya nama halaman terakhir, bukan turun ke baris kedua */
+.toko :is(.catpage,.docpage) .crumbs{ flex-wrap:nowrap; margin-bottom:var(--s-2) }
+.toko :is(.catpage,.docpage) .crumbs > *{ flex:none }
+.toko :is(.catpage,.docpage) .crumbs > [aria-current]{ flex:0 1 auto; min-width:0; max-width:none; line-height:var(--tap) }
+
+.toko .pagehead{ margin:0 0 var(--s-4); padding:0 }
+.toko .pagehead h1{ margin:0; max-width:26ch; font-size:var(--fs-h1); font-weight:var(--w-medium); line-height:1.1; letter-spacing:var(--track-display) }
+.toko .pagehead .pagehead-desc{ margin:var(--s-3) 0 0; max-width:70ch; color:var(--ink-2); font:var(--w-regular) var(--fs-16)/var(--lh-body) var(--font-sans) }
+.toko .pagehead .pagefacts{ display:flex; flex-wrap:wrap; margin:var(--s-3) 0 0; max-width:none; color:var(--ink-2); font:var(--w-semi) var(--fs-13)/1.5 var(--font-sans); font-variant-numeric:tabular-nums lining-nums }
+.toko .pagefacts span{ white-space:nowrap }
+.toko .pagefacts span + span::before{ content:"\00B7"; margin-inline:var(--s-2); color:var(--line-strong) }
+.toko .docpage .pagehead{ margin-bottom:var(--s-6) }
+@media (max-width:639.98px){
+  /* Dipotong hanya bila halamannya punya uraian lengkap di tempat lain (halaman kategori).
+     Di /produk kalimatnya pendek dan selalu tampil utuh. */
+  .toko .catpage .pagehead-desc--clamp{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden }
+  /* tab kategori melebar sampai tepi layar supaya bisa digeser tanpa terpotong */
+  .toko .catpage .tabs{ margin-inline:calc(var(--gutter)*-1) }
+}
+
+/* =====================================================================
+   3. KATALOG: toolbar, filter, hasil
+   Susunan DOM: .cat-wrap > .cat-bar(.cat-search, .cat-status, .cat-tools) + .cat-layout(.cat-side, .cat-main)
+   HP: .cat-bar "dilebur" (display:contents) supaya baris Filter/Urutkan bisa lengket
+       sepanjang daftar produk, sementara kotak cari dan chip filter ikut menggulung.
+   ===================================================================== */
+.toko .cat-wrap{ --cat-bar-h:65px; --cat-side-w:232px; display:flex; flex-direction:column; min-width:0 }
+.toko .cat-bar{ display:contents }
+
+/* kotak cari (bingkai dan input dari theme.css) */
+.toko .cat-bar .cat-search{ order:1; flex:none; width:auto; min-width:0; height:var(--control-h); margin-top:var(--s-4) }
+.toko .cat-search button{ display:grid; place-items:center; flex:none; width:var(--tap); height:var(--tap); padding:0; border:0; border-radius:var(--r-sm); background:transparent; color:var(--mute); cursor:pointer }
+.toko .cat-search button:hover{ background:var(--surface-2); color:var(--ink) }
+
+/* baris Filter + Urutkan */
+.toko .cat-tools{ order:2; position:sticky; top:var(--header-h); z-index:calc(var(--z-header) - 10); display:flex; align-items:center; gap:var(--s-3); min-height:calc(var(--control-h-sm) + var(--s-3)); margin:var(--s-2) calc(var(--gutter)*-1) 0; padding:0 var(--gutter); background:var(--canvas); border-bottom:var(--bw) solid var(--line) }
+.toko .cat-tools > *{ flex:1 1 0; min-width:0 }
+.toko .cat-tools > .cat-toggle{ flex:none }   /* Filter selebar isinya; sisa ruang untuk Urutkan supaya labelnya tidak terpotong */
+.toko .cat-toggle{ height:var(--control-h-sm) }
+.toko .cat-toggle em{ display:grid; place-items:center; min-width:20px; height:20px; padding:0 6px; border-radius:var(--r-pill); background:var(--brand); color:var(--on-brand); font:var(--w-bold) var(--fs-12)/1 var(--font-sans); font-style:normal; font-variant-numeric:tabular-nums lining-nums }
+.toko .cat-toggle[aria-expanded=true]{ border-color:var(--ink) }
+
+.toko .cat-sort{ position:relative; display:flex; align-items:center; gap:var(--s-2); margin:0; color:var(--mute); font:var(--w-regular) var(--fs-14)/1.3 var(--font-sans) }
+.toko .cat-sort > svg{ position:absolute; left:var(--s-3); top:0; bottom:0; margin-block:auto; color:var(--ink); pointer-events:none }
+/* 16px di HP supaya iOS tidak memperbesar halaman saat select dibuka */
+.toko .cat-sort select{ width:100%; min-width:0; max-width:none; height:var(--control-h-sm); padding-block:0; padding-left:calc(var(--s-6) + var(--s-1)); border:var(--bw) solid var(--line-strong); border-radius:var(--r-md); color:var(--ink); font:var(--w-medium) var(--fs-16)/1.2 var(--font-sans); text-overflow:ellipsis; cursor:pointer }
+.toko .cat-sort select:hover{ border-color:var(--ink) }
+
+/* jumlah hasil + chip filter aktif (satu baris, bisa digeser) */
+.toko .cat-status{ order:3; display:flex; align-items:center; gap:var(--s-2); min-width:0; min-height:var(--control-h); margin-inline:calc(var(--gutter)*-1); padding:var(--s-2) var(--gutter); overflow-x:auto; scrollbar-width:none; overscroll-behavior-x:contain }
+.toko .cat-status::-webkit-scrollbar{ display:none }
+.toko .cat-status > *{ flex:none }
+.toko .cat-count{ margin:0 var(--s-2) 0 0; color:var(--ink); font:var(--w-semi) var(--fs-16)/1.3 var(--font-sans); font-variant-numeric:tabular-nums lining-nums; white-space:nowrap }
+.toko .cat-status .chip-x{ padding-inline:var(--s-3) }
+.toko .cat-status .chip-x span{ max-width:22ch; overflow:hidden; text-overflow:ellipsis; line-height:1.5 }   /* line-height: huruf berekor (g, y) tidak terpotong */
+.toko .cat-clear{ white-space:nowrap; margin-left:var(--s-1) }
+
+.toko .cat-layout{ order:4; display:block; min-width:0; margin-top:var(--s-2) }
+.toko .cat-main{ min-width:0 }
+
+/* ---------- filter: isi (sama di lembar bawah HP dan sidebar desktop) ---------- */
+.toko .cat-side{ margin:0; border:0 }
+.toko .cat-sheet-head h2{ margin:0; font:var(--w-semi) var(--fs-18)/var(--lh-snug) var(--font-sans); letter-spacing:0 }
+.toko .cat-side fieldset{ display:grid; gap:2px; min-width:0; margin:0; padding:0; border:0 }
+.toko .cat-side legend{ width:100%; margin:0 0 var(--s-2); padding:0; color:var(--mute); font:var(--w-semi) var(--fs-12)/1.3 var(--font-sans); letter-spacing:var(--track-label); text-transform:uppercase }
+.toko .cat-side fieldset button{ display:flex; align-items:center; justify-content:space-between; gap:var(--s-2); min-height:var(--tap); padding:0 var(--s-3); border:var(--bw-strong) solid transparent; border-radius:var(--r-md); background:transparent; color:var(--ink); font:var(--w-medium) var(--fs-14)/1.3 var(--font-sans); text-align:left; cursor:pointer; transition:background-color var(--dur-1),border-color var(--dur-1) }
+.toko .cat-side fieldset button.on{ font-weight:var(--w-semi) }
+.toko .cat-side fieldset button small{ color:var(--mute); font:var(--w-regular) var(--fs-13)/1 var(--font-sans); font-variant-numeric:tabular-nums lining-nums }
+.toko .cat-side fieldset button.on small{ color:inherit }
+@media (hover:hover){ .toko .cat-side fieldset button:not(.on):hover{ background:var(--surface-2) } }
+.toko .cat-side .cat-check{ color:var(--ink); font-weight:var(--w-medium) }
+.toko .cat-reset{ justify-self:start }
+
+/* ---------- < 900px: filter sebagai lembar bawah ---------- */
+@media (max-width:899.98px){
+  /* label "Urutkan" disembunyikan secara visual saja, supaya select tetap punya nama untuk pembaca layar */
+  .toko .cat-sort > span{ display:block; position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0 }
+
+  .toko .cat-overlay{ position:fixed; inset:0; z-index:calc(var(--z-drawer) - 1); background:var(--overlay); animation:cat-fade var(--dur-2) var(--ease) }
+  .toko .cat-side,.toko .cat-side.open{ position:fixed; inset:auto 0 0 0; z-index:var(--z-drawer); display:flex; flex-direction:column; max-height:82vh; max-height:82dvh; padding:0; background:var(--canvas); border-radius:var(--r-lg) var(--r-lg) 0 0; box-shadow:var(--shadow-2); overflow:hidden }
+  .toko .cat-side{ transform:translateY(100%); visibility:hidden; transition:transform var(--dur-2) var(--ease),visibility 0s linear var(--dur-2) }
+  .toko .cat-side.open{ transform:none; visibility:visible; transition:transform var(--dur-2) var(--ease),visibility 0s }
+  .toko .cat-sheet-head{ display:flex; align-items:center; justify-content:space-between; gap:var(--s-3); flex:none; padding:var(--s-2) var(--s-2) var(--s-2) var(--gutter); border-bottom:var(--bw) solid var(--line) }
+  .toko .cat-sheet-body{ display:grid; align-content:start; gap:var(--s-5); flex:1 1 auto; min-height:0; padding:var(--s-4) var(--gutter) var(--s-5); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch }
+  .toko .cat-sheet-foot{ flex:none; padding:var(--s-3) var(--gutter) calc(var(--s-3) + env(safe-area-inset-bottom)); background:var(--canvas); border-top:var(--bw) solid var(--line) }
+  /* pilihan filter tampil sebagai chip yang membungkus */
+  .toko .cat-side fieldset{ display:flex; flex-wrap:wrap; gap:var(--s-2) }
+  .toko .cat-side fieldset button{ padding:0 var(--s-4); border:var(--bw) solid var(--line-strong); border-radius:var(--r-pill); background:var(--surface); font-weight:var(--w-semi) }
+}
+@keyframes cat-fade{ from{ opacity:0 } to{ opacity:1 } }
+/* tablet: Urutkan tidak perlu selebar layar */
+@media (min-width:640px) and (max-width:899.98px){
+  .toko .cat-tools{ justify-content:space-between }
+  .toko .cat-tools > .cat-sort{ flex:0 1 280px }
+}
+
+/* ---------- >= 900px: toolbar lengket satu baris + sidebar filter ---------- */
+@media (min-width:900px){
+  .toko .cat-wrap{ display:block }
+  .toko .cat-bar{ position:sticky; top:var(--header-h); z-index:calc(var(--z-header) - 10); display:flex; flex-wrap:nowrap; align-items:center; gap:var(--s-4); min-height:var(--cat-bar-h); margin:0 0 var(--s-5); padding-block:var(--s-2); background:var(--canvas); border-bottom:var(--bw) solid var(--line) }
+  .toko .cat-bar .cat-search{ order:0; width:260px; margin-top:0 }
+  .toko .cat-status{ order:0; flex:1 1 0; min-height:0; margin-inline:0; padding:var(--s-1) }
+  .toko .cat-tools{ order:0; position:static; flex:none; min-height:0; margin:0; padding:0; background:none; border:0 }
+  .toko .cat-tools > *{ flex:none }
+  .toko .cat-toggle{ display:none }
+  .toko .cat-sort > span{ display:inline; white-space:nowrap }
+  .toko .cat-sort > svg{ display:none }
+  .toko .cat-sort select{ width:auto; min-width:184px; padding-left:var(--s-3); font-size:var(--fs-14); font-weight:var(--w-semi) }
+
+  .toko .cat-layout{ display:grid; grid-template-columns:var(--cat-side-w) minmax(0,1fr); gap:calc(var(--s-6) + var(--s-2)); align-items:start; margin-top:0 }
+  /* padding + margin negatif: memberi ruang cincin fokus di dalam wadah yang bisa digulir */
+  .toko .cat-side,.toko .cat-side.open{ position:sticky; top:calc(var(--header-h) + var(--cat-bar-h) + var(--s-4)); display:block; max-height:calc(100vh - var(--header-h) - var(--s-9)); max-height:calc(100dvh - var(--header-h) - var(--s-9)); margin:calc(var(--s-1)*-1); padding:var(--s-1); border-radius:0; overflow:auto; scrollbar-width:thin; scrollbar-color:transparent transparent; scrollbar-gutter:stable }
+  /* bilah gulir sidebar baru terlihat saat disentuh kursor atau fokus (ruangnya sudah disediakan, jadi isi tidak bergeser) */
+  .toko .cat-side:is(:hover,:focus-within){ scrollbar-color:var(--line-strong) transparent }
+  .toko :is(.cat-sheet-head,.cat-sheet-foot,.cat-overlay){ display:none }
+  .toko .cat-sheet-body{ display:grid; gap:var(--s-5) }
+  /* label diberi inset yang sama dengan teks tombol, supaya satu garis */
+  .toko .cat-side legend{ padding-left:var(--s-3) }
+  .toko .cat-side .cat-check{ padding-inline:var(--s-3) }
+  .toko .cat-reset{ margin-left:var(--s-3) }
+}
+@media (min-width:1200px){ .toko .cat-bar .cat-search{ width:320px } }
+
+/* ---------- hasil: muat lagi + keadaan kosong ---------- */
+.toko .cat-more{ display:flex; flex-direction:column; align-items:center; gap:var(--s-3); margin-top:var(--s-7) }
+.toko .cat-more p{ margin:0; color:var(--ink-2); font:var(--w-regular) var(--fs-14)/1.4 var(--font-sans); font-variant-numeric:tabular-nums lining-nums }
+.toko .cat-progress{ width:240px; max-width:100%; height:3px; border-radius:var(--r-pill); background:var(--surface-3); overflow:hidden }
+.toko .cat-progress i{ display:block; height:100%; background:var(--ink); transform-origin:left center; transition:transform var(--dur-2) var(--ease) }
+.toko .emptystate .btnrow{ justify-content:center }
+
+/* =====================================================================
+   4. HALAMAN KATEGORI: blok penjelasan di bawah katalog
+   ===================================================================== */
+.toko .catabout{ display:grid; gap:var(--s-6); max-width:none; margin-top:var(--s-8); padding-top:var(--s-6); border-top:var(--bw) solid var(--ink) }
+.toko .catabout h2{ margin:0; font-size:var(--fs-h2); font-weight:var(--w-medium); line-height:1.12 }
+.toko .catabout-text p{ margin:var(--s-4) 0 0; max-width:var(--measure); color:var(--ink-2); font:var(--w-regular) var(--fs-16)/1.7 var(--font-sans) }
+.toko .catabout-cta{ align-content:start; gap:var(--s-3) }
+.toko .catabout-cta h3{ margin:0 }
+.toko .catabout-cta p{ margin:0; max-width:none; color:var(--ink-2); font:var(--w-regular) var(--fs-14)/1.5 var(--font-sans) }
+.toko .catabout-cta .btn{ margin-top:var(--s-1) }
+@media (min-width:640px){ .toko .catabout-cta .btn{ justify-self:start } }
+@media (min-width:900px){ .toko .catabout{ grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:var(--s-7); align-items:start } }
+
+/* =====================================================================
+   5. BLOG: daftar artikel sebagai baris bergaris (bukan kartu)
+   ===================================================================== */
+/* Susunan: .bloglayout > .postlist + .blogside.
+   < 1200  : daftar artikel dibatasi --doc-w supaya baris enak dibaca, panel samping turun ke bawah daftar.
+   >= 1200 : daftar di kiri, panel konsultasi + tautan katalog lengket di kanan (kontainer terisi penuh). */
+.toko .docpage{ --doc-w:960px; --blog-side-w:320px }
+.toko .bloglayout{ display:grid; grid-template-columns:minmax(0,1fr); gap:var(--s-7); max-width:var(--doc-w) }
+.toko .postlist{ display:block; min-width:0; margin:0; padding:0; list-style:none; border-top:var(--bw) solid var(--ink) }
+.toko .post{ position:relative; display:grid; grid-template-columns:minmax(0,1fr); gap:var(--s-4); margin:0; padding:var(--s-5) 0; border-bottom:var(--bw) solid var(--line) }
+.toko .post-cover{ aspect-ratio:4/3; border-radius:var(--r-md); overflow:hidden; background:var(--surface-2) }
+.toko .post-cover img{ width:100%; height:100%; object-fit:cover; transition:transform var(--dur-2) var(--ease) }
+/* artikel tanpa sampul: kotak pengganti berlogo. Di HP baris menumpuk, jadi kotak kosong tidak perlu tampil. */
+.toko .post-cover.post-cover--blank{ display:none; place-items:center }
+.toko .post-cover--blank .logo-mark{ transition:transform var(--dur-2) var(--ease) }
+.toko .post-body{ display:grid; align-content:start; gap:var(--s-2); min-width:0 }
+.toko :is(.post-meta,.postmeta){ display:flex; flex-wrap:wrap; margin:0; color:var(--mute); font:var(--w-regular) var(--fs-13)/1.5 var(--font-sans) }
+.toko :is(.post-meta,.postmeta) > * + *::before{ content:"\00B7"; margin-inline:var(--s-2); color:var(--line-strong) }
+.toko .post-title{ margin:0; color:var(--ink); font:var(--w-semi) var(--fs-22)/1.2 var(--font-serif); letter-spacing:-.01em; text-wrap:balance }
+.toko .post-title a{ color:inherit; text-decoration:none }
+.toko .post-title a::after{ content:""; position:absolute; inset:0 }   /* seluruh baris jadi satu target klik */
+.toko .post-excerpt{ margin:0; max-width:var(--measure); color:var(--ink-2); font:var(--w-regular) var(--fs-16)/1.55 var(--font-sans); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden }
+.toko .post-more{ justify-self:start; min-height:0; margin-top:var(--s-1) }
+@media (hover:hover){
+  .toko .post:hover .post-title a{ text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px }
+  .toko .post:hover .post-cover :is(img,.logo-mark){ transform:scale(1.03) }
+  .toko .post:hover .post-more{ color:var(--brand-strong) }
+}
+@supports selector(:has(a)){
+  .toko .post-title a:focus-visible{ outline:0 }
+  .toko .post:has(a:focus-visible){ outline:2px solid var(--focus); outline-offset:var(--s-1); border-radius:var(--r-md) }
+}
+/* semua baris punya kolom sampul yang sama lebar, jadi tepi kiri judul tidak loncat-loncat */
+@media (min-width:640px){
+  .toko .post{ grid-template-columns:200px minmax(0,1fr); gap:var(--s-5); align-items:start }
+  .toko .post-cover.post-cover--blank{ display:grid }
+}
+@media (min-width:900px){
+  .toko .post{ grid-template-columns:240px minmax(0,1fr); gap:var(--s-6) }
+}
+
+/* kolom samping blog: ajakan konsultasi + tautan ke katalog */
+.toko .blogside{ display:grid; grid-template-columns:minmax(0,1fr); gap:var(--s-6); align-items:start; min-width:0 }
+.toko .blogside-cta{ align-content:start; gap:var(--s-3) }
+.toko .blogside-cta h2{ margin:0 }
+.toko .blogside-cta p{ margin:0; max-width:none; color:var(--ink-2); font:var(--w-regular) var(--fs-14)/1.5 var(--font-sans) }
+.toko .blogside-cta .btn{ margin-top:var(--s-1) }
+.toko .blogside-cats{ display:grid; min-width:0; border-bottom:var(--bw) solid var(--line) }
+.toko .blogside-cats .seclabel{ margin-bottom:var(--s-2) }
+.toko .blogside-cats a{ display:flex; align-items:center; justify-content:space-between; gap:var(--s-3); min-height:var(--control-h); border-top:var(--bw) solid var(--line); color:var(--ink); font:var(--w-semi) var(--fs-14)/1.3 var(--font-sans); text-decoration:none }
+.toko .blogside-cats a svg{ flex:none; color:var(--mute) }
+.toko .blogside-cats a:hover{ color:var(--brand-strong) }
+.toko .blogside-cats a:hover svg{ color:inherit }
+@media (min-width:640px){
+  .toko .blogside{ grid-template-columns:repeat(2,minmax(0,1fr)) }
+  .toko .blogside-cta .btn{ justify-self:start }
+}
+@media (min-width:1200px){
+  .toko .bloglayout{ grid-template-columns:minmax(0,1fr) var(--blog-side-w); gap:var(--s-8); align-items:start; max-width:none }
+  .toko .blogside{ position:sticky; top:calc(var(--header-h) + var(--s-5)); grid-template-columns:minmax(0,1fr) }
+  .toko .blogside-cta .btn{ justify-self:stretch }
+}
+
+/* "Artikel lainnya" di bawah artikel: baris ringkas di HP, tiga kolom di layar lebar */
+.toko .morepost{ margin-top:var(--s-8) }
+.toko .morepost .sechead{ margin-bottom:var(--s-2) }
+.toko .morepost .sechead h2{ font-size:var(--fs-22) }   /* kolom artikel sempit (760px): judul bab tidak perlu sebesar halaman lebar */
+.toko .postgrid{ display:grid; grid-template-columns:minmax(0,1fr); margin:0; padding:0; list-style:none }
+.toko .post.post--card{ display:flex; align-items:flex-start; gap:var(--s-4); padding:var(--s-4) 0 }
+.toko .post--card .post-cover{ flex:0 0 112px }
+.toko .post--card .post-body{ flex:1 1 0; gap:var(--s-1) }
+.toko .post--card .post-title{ font:var(--w-semi) var(--fs-16)/var(--lh-snug) var(--font-sans); letter-spacing:0; text-wrap:pretty }
+@media (min-width:640px){
+  .toko .morepost .sechead{ margin-bottom:var(--s-5) }
+  .toko .morepost .sechead h2{ font-size:var(--fs-28) }
+  .toko .postgrid{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--s-5) }
+  .toko .post.post--card{ flex-direction:column; align-items:stretch; gap:var(--s-3); padding:0; border-bottom:0 }
+  .toko .post--card .post-cover{ flex:none; width:100% }
+  .toko .post--card .post-body{ flex:none }
+}
+
+/* =====================================================================
+   6. ARTIKEL + HALAMAN INFO (tentang, syarat, privasi, pengembalian)
+   Lebar kolom diatur .container--text (760px); teks dibatasi --measure.
+   ===================================================================== */
+.toko .article{ max-width:none; margin:0 }
+.toko .article-head{ margin:0 0 var(--s-5) }
+.toko .article-head h1{ margin:0; font-size:var(--fs-h1); font-weight:var(--w-medium); line-height:1.1 }
+.toko .article-head .postmeta{ margin-top:var(--s-3) }
+.toko .articlecover{ display:block; width:100%; height:auto; aspect-ratio:1200/630; object-fit:cover; margin:0 0 var(--s-6); border-radius:var(--r-lg); background:var(--surface-2) }
+
+.toko .prose{ --fs-prose:17px; margin:0; color:var(--ink-2); font:var(--w-regular) var(--fs-prose)/1.7 var(--font-sans); overflow-wrap:break-word }
+.toko .prose > :first-child{ margin-top:0; padding-top:0; border-top:0 }
+.toko .prose > :last-child{ margin-bottom:0 }
+.toko .prose :is(p,ul,ol,blockquote){ max-width:var(--measure) }
+.toko .prose p{ margin:0 0 var(--s-5) }
+.toko .prose h2{ margin:var(--s-7) 0 var(--s-4); padding-top:var(--s-5); border-top:var(--bw) solid var(--line); color:var(--ink); font-size:var(--fs-22); font-weight:var(--w-medium); line-height:1.2 }
+.toko .prose h3{ margin:var(--s-6) 0 var(--s-2); color:var(--ink); font:var(--w-semi) var(--fs-18)/var(--lh-snug) var(--font-sans); letter-spacing:0 }
+.toko .prose h4{ margin:var(--s-5) 0 var(--s-2); color:var(--ink); font:var(--w-semi) var(--fs-16)/var(--lh-snug) var(--font-sans); letter-spacing:0 }
+.toko .prose :is(ul,ol){ margin:0 0 var(--s-5); padding-left:1.25em }
+.toko .prose li{ margin:0 0 var(--s-2); padding-left:var(--s-1) }
+.toko .prose li::marker{ color:var(--mute) }
+.toko .prose li > :is(ul,ol){ margin:var(--s-2) 0 0 }
+.toko .prose :is(strong,b){ color:var(--ink); font-weight:var(--w-semi) }
+.toko .prose a{ color:var(--brand); font-weight:inherit; text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px }
+.toko .prose a:hover{ color:var(--brand-strong) }
+.toko .prose img{ display:block; max-width:100%; height:auto; margin:var(--s-5) 0; border-radius:var(--r-md) }
+.toko .prose blockquote{ margin:var(--s-5) 0; padding:var(--s-1) 0 var(--s-1) var(--s-5); border-left:3px solid var(--brand-line); color:var(--ink-2) }
+.toko .prose blockquote > :last-child{ margin-bottom:0 }
+.toko .prose hr{ height:0; margin:var(--s-6) 0; border:0; border-top:var(--bw) solid var(--line) }
+.toko .prose code{ padding:2px 6px; border-radius:var(--r-sm); background:var(--surface-2); color:var(--ink); font-size:.9em }
+.toko .prose table{ display:block; width:100%; max-width:100%; margin:0 0 var(--s-5); border-collapse:collapse; overflow-x:auto; font-size:var(--fs-14); line-height:1.5; font-variant-numeric:tabular-nums lining-nums }
+.toko .prose :is(th,td){ padding:var(--s-3) var(--s-4) var(--s-3) 0; border:0; border-bottom:var(--bw) solid var(--line); text-align:left; vertical-align:top }
+.toko .prose th{ border-bottom-color:var(--ink); color:var(--ink); font-weight:var(--w-semi); white-space:nowrap }
+@media (min-width:640px){ .toko .prose h2{ font-size:var(--fs-28) } }
+
+/* ajakan di akhir artikel / halaman info */
+.toko .articlecta{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:var(--s-4) var(--s-5); margin-top:var(--s-7) }
+.toko .articlecta div{ display:grid; gap:var(--s-1); flex:1 1 240px; max-width:44ch }
+.toko .articlecta b{ color:var(--ink); font:var(--w-semi) var(--fs-18)/var(--lh-snug) var(--font-sans) }
+.toko .articlecta div span{ color:var(--ink-2); font:var(--w-regular) var(--fs-14)/1.5 var(--font-sans) }
+.toko .articlecta .btn{ flex:1 1 auto }
+@media (min-width:640px){ .toko .articlecta .btn{ flex:none } }
+
+/* =====================================================================
+   7. 404
+   ===================================================================== */
+.toko .notfound{ display:grid; align-content:center }

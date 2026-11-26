@@ -7,8 +7,9 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Supplier goodie bag spunbond, paperbag, dan coolerbag. Ready stock dan custom.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#ffffff',
-    theme_color: '#ffffff',
+    // Sama dengan --canvas di app/theme.css dan themeColor di app/layout.tsx
+    background_color: '#FCFAF6',
+    theme_color: '#FCFAF6',
     lang: 'id',
     icons: [
       { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' },

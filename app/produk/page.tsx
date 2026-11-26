@@ -2,7 +2,10 @@ import type { Metadata } from 'next';
 import { ChevronRight } from 'lucide-react';
 import { getData } from '@/lib/data';
 import { siteUrl } from '@/lib/site';
-import { SiteFooter, SiteHeader } from '@/components/site-chrome';
+import { waLink } from '@/lib/wa';
+import { money } from '@/lib/format';
+import { categories } from '@/lib/categories';
+import { StoreShell, catalogMoq } from '@/components/site-chrome';
 import Catalog from '@/components/catalog';
 import { toCard } from '@/lib/catalog';
 import { jsonLdScript } from '@/lib/seo';
@@ -19,6 +22,9 @@ export const metadata: Metadata = {
 export default async function CatalogPage() {
   const { settings, products, checkoutEnabled } = await getData();
   const cards = products.map(toCard);
+  const priced = cards.filter(p => p.price > 0);
+  const fromPrice = priced.length ? Math.min(...priced.map(p => p.price)) : 0;
+  const minMoq = cards.length ? Math.min(...cards.map(p => p.moq)) : 0;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -31,13 +37,28 @@ export default async function CatalogPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(jsonLd)} />
-      <SiteHeader settings={settings} checkout={checkoutEnabled} />
-      <main className="container shop">
-        <nav className="crumbs" aria-label="Breadcrumb"><a href="/">Beranda</a><ChevronRight size={14} /><span aria-current="page">Katalog</span></nav>
-        <header className="pagehead"><h1>Katalog goodie bag</h1><p>{cards.length} desain spunbond, paperbag, dan coolerbag. Harga per pcs, minimum order tertera di tiap produk.</p></header>
-        <Catalog products={cards} />
-      </main>
-      <SiteFooter settings={settings} checkout={checkoutEnabled} />
+      <StoreShell settings={settings} checkout={checkoutEnabled} search={false} active="/produk" moq={catalogMoq(products)}>
+        <main id="konten" className="container catpage">
+          <nav className="crumbs" aria-label="Breadcrumb"><a href="/">Beranda</a><ChevronRight size={14} aria-hidden="true" /><span aria-current="page">Katalog</span></nav>
+          <header className="pagehead">
+            <h1>Katalog goodie bag</h1>
+            {/* Satu kalimat pendek: di HP muat dua baris utuh. Jenis tas sudah terbaca di tab kategori tepat di bawahnya. */}
+            <p className="pagehead-desc">Harga per pcs, minimum order, dan stok tertera di tiap produk.</p>
+            <p className="pagefacts">
+              <span>{cards.length.toLocaleString('id-ID')} desain</span>
+              {fromPrice > 0 && <span>mulai {money(fromPrice)} /pcs</span>}
+              {minMoq > 0 && <span>min. {minMoq.toLocaleString('id-ID')} pcs</span>}
+            </p>
+          </header>
+          <nav className="tabs" aria-label="Kategori produk">
+            <a href="/produk" aria-current="page">Semua <small>{cards.length.toLocaleString('id-ID')}</small></a>
+            {Object.entries(categories).map(([slug, c]) => (
+              <a key={slug} href={`/kategori/${slug}`}>{c.name} <small>{cards.filter(p => p.category === c.name).length.toLocaleString('id-ID')}</small></a>
+            ))}
+          </nav>
+          <Catalog products={cards} waHref={waLink(settings)} />
+        </main>
+      </StoreShell>
     </>
   );
 }

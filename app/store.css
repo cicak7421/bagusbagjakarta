@@ -1,42 +1,13 @@
 /* =====================================================================
    Tampilan toko (v2): header dengan pencarian, beranda, katalog, kartu produk, halaman produk
    ===================================================================== */
-:root{--ink:#14171f;--mute:#5d6472;--muted:#5d6472;--line:#e6e8ee;--soft:#f4f5f8;--blue:#0b5bd3;--blue-d:#0847a8;--tint:#eaf1fd;--ok:#12805c;--warn:#b25e09;--radius:18px;--shadow:0 10px 30px rgba(16,24,40,.08)}
-html{scroll-padding-top:140px}
+/* Token (:root) dan scroll-padding-top pindah ke app/theme.css */
 body{background:#fff}
 .container{width:min(1240px,calc(100% - 48px))}
 @media(max-width:640px){.container{width:calc(100% - 32px)}}
 
 /* ---------- Header ---------- */
-.topstrip{background:var(--ink);color:#cfd5e2;font-size:12.5px}
-.topstrip .container{display:flex;justify-content:space-between;gap:16px;align-items:center;min-height:34px}
-.topstrip span{display:inline-flex;gap:7px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.topstrip a{color:#fff;font-weight:600;text-decoration:none;white-space:nowrap}.topstrip a:hover{text-decoration:underline}
-.shead{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.96);backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid var(--line)}
-.shead-main{display:flex;align-items:center;gap:28px;height:72px}
-.shead .brand{font-size:18px;flex:none}
-.shead-search{flex:1;max-width:560px;display:flex;align-items:center;gap:10px;height:46px;padding:0 6px 0 16px;border:1.5px solid var(--line);border-radius:999px;background:var(--soft);color:var(--mute);transition:border-color .15s,background .15s}
-.shead-search:focus-within{border-color:var(--blue);background:#fff}
-.shead-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:500 15px var(--font-body);color:var(--ink)}
-.shead-search input::-webkit-search-cancel-button{display:none}
-.shead-search button{border:0;border-radius:999px;background:var(--ink);color:#fff;font:600 14px var(--font-body);padding:9px 18px;cursor:pointer}.shead-search button:hover{background:#000}
-.shead .navright{margin-left:auto}
-.shead-nav{border-top:1px solid var(--line)}
-.shead-nav .container{display:flex;justify-content:space-between;gap:24px;align-items:center;height:46px}
-.shead-cats,.shead-links{display:flex;gap:4px;align-items:center}
-.shead-nav a{text-decoration:none;font-size:14px;font-weight:600;color:var(--ink);padding:7px 12px;border-radius:999px;white-space:nowrap}
-.shead-nav a:hover{background:var(--soft)}
-.shead-cats a:first-child{background:var(--tint);color:var(--blue)}
-.shead-links a{font-weight:500;color:var(--mute)}.shead-links a:hover{color:var(--ink)}
-@media(max-width:900px){
-  .topstrip span{display:none}.topstrip .container{justify-content:center}
-  .shead-main{height:auto;flex-wrap:wrap;gap:10px;padding:10px 0}
-  .shead-search{order:3;flex:1 0 100%;max-width:none;height:44px}
-  .shead-links{display:none}
-  .shead-nav .container{height:44px;overflow-x:auto;scrollbar-width:none}.shead-nav .container::-webkit-scrollbar{display:none}
-  .shead .mnav-panel{z-index:70}
-  html{scroll-padding-top:170px}
-}
+/* Gaya header (strip atas, logo, pencarian, baris kategori, laci menu) pindah ke app/theme.css di bawah .toko */
 
 /* ---------- Tombol ---------- */
 .primary,.navcta{background:var(--blue);font-weight:700}.primary:hover,.navcta:hover{background:var(--blue-d)}
@@ -44,20 +15,7 @@ body{background:#fff}
 .outline{font-weight:700}
 
 /* ---------- Hero ---------- */
-.hero2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:48px;align-items:center;padding-top:36px;padding-bottom:8px}
-.hero2 h1{font-size:clamp(34px,4.6vw,58px);font-weight:800;line-height:1.04;letter-spacing:-.035em;max-width:14ch}
-.hero2 .lead{font-size:18px;color:var(--mute);max-width:44ch;margin:18px 0 0;line-height:1.6}
-.hero2-btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
-.hero2-stats{display:flex;gap:36px;margin:36px 0 0;padding-top:24px;border-top:1px solid var(--line);flex-wrap:wrap}
-.hero2-stats dt{font-size:24px;font-weight:800;letter-spacing:-.02em}.hero2-stats dd{margin:2px 0 0;font-size:13.5px;color:var(--mute)}
-.hero2-art{border-radius:28px;overflow:hidden;background:var(--soft)}.hero2-art>img{width:100%;height:100%;object-fit:cover;aspect-ratio:1/1}
-.hero2-art.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:transparent;border-radius:0;overflow:visible}
-.hero2-art.grid a{position:relative;display:block;border-radius:22px;overflow:hidden;background:var(--soft);aspect-ratio:1/1}
-.hero2-art.grid a:nth-child(2),.hero2-art.grid a:nth-child(3){transform:translateY(18px)}
-.hero2-art.grid img{width:100%;height:100%;object-fit:cover;transition:transform .5s}.hero2-art.grid a:hover img{transform:scale(1.05)}
-.hero2-art.grid span{position:absolute;left:10px;bottom:10px;right:10px;width:fit-content;max-width:calc(100% - 20px);background:rgba(255,255,255,.94);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.trust{padding-top:44px}
-@media(max-width:900px){.hero2{grid-template-columns:1fr;gap:28px;padding-top:22px}.hero2 h1{max-width:none}.hero2-stats{gap:24px}.hero2-art.grid a:nth-child(2),.hero2-art.grid a:nth-child(3){transform:none}.trust{padding-top:28px}}
+/* Gaya hero, garis fakta, dan ubin kategori beranda pindah ke app/home.css di bawah .toko */
 
 /* ---------- Section ---------- */
 .sec{padding-top:72px}
@@ -66,15 +24,6 @@ body{background:#fff}
 .seclink{color:var(--blue);font-weight:700;font-size:15px;text-decoration:none;display:inline-flex;gap:6px;align-items:center}.seclink:hover{text-decoration:underline}
 .sec-cta{display:flex;justify-content:center;margin-top:32px}
 @media(max-width:900px){.sec{padding-top:52px}}
-
-/* ---------- Kartu kategori ---------- */
-.catcards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.catcard{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:22px;overflow:hidden;text-decoration:none;background:#fff;transition:box-shadow .2s,transform .2s,border-color .2s}
-.catcard:hover{box-shadow:var(--shadow);transform:translateY(-3px);border-color:#d5dae6}
-.catcard-imgs{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;background:var(--soft)}.catcard-imgs img{width:100%;aspect-ratio:1/1;object-fit:cover}
-.catcard-body{padding:18px 20px 20px;display:grid;gap:4px}.catcard-body h3{font-size:19px;font-weight:800}.catcard-body p{margin:0;color:var(--mute);font-size:14px}
-.catcard-go{margin-top:8px;color:var(--blue);font-weight:700;font-size:14px;display:inline-flex;gap:6px;align-items:center}
-@media(max-width:900px){.catcards{grid-template-columns:1fr}.catcard{flex-direction:row;align-items:center}.catcard-imgs{flex:0 0 46%}.catcard-body{padding:14px 16px}}
 
 /* ---------- Kartu produk ---------- */
 .pgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:26px 18px}
@@ -168,7 +117,6 @@ body{background:#fff}
 .pillspacer,.pillbar{display:none}
 .wafab{bottom:20px}
 .section{padding-top:72px}.custom{margin-top:72px}
-footer{margin-top:88px}
 
 /* ---------- Admin: cari produk, SKU, galeri ---------- */
 .toolbar{gap:10px;align-items:center}

@@ -4,8 +4,9 @@ import { ChevronRight, MessageCircle } from 'lucide-react';
 import { getData } from '@/lib/data';
 import { waLink } from '@/lib/wa';
 import { siteUrl } from '@/lib/site';
+import { money } from '@/lib/format';
 import { categories, type CategorySlug } from '@/lib/categories';
-import { SiteFooter, SiteHeader } from '@/components/site-chrome';
+import { EmptyArt, StoreShell, catalogMoq } from '@/components/site-chrome';
 import Catalog from '@/components/catalog';
 import { toCard } from '@/lib/catalog';
 import { jsonLdScript } from '@/lib/seo';
@@ -28,6 +29,10 @@ export default async function CategoryPage({ params }: Props) {
   if (!c) notFound();
   const { settings, products, checkoutEnabled } = await getData();
   const cards = products.filter(p => p.category === c.name).map(toCard);
+  const priced = cards.filter(p => p.price > 0);
+  const fromPrice = priced.length ? Math.min(...priced.map(p => p.price)) : 0;
+  const minMoq = cards.length ? Math.min(...cards.map(p => p.moq)) : 0;
+  const wa = waLink(settings);
   const url = `${siteUrl}/kategori/${slug}`;
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -42,20 +47,53 @@ export default async function CategoryPage({ params }: Props) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(jsonLd)} />
-      <SiteHeader settings={settings} checkout={checkoutEnabled} />
-      <main className="container shop">
-        <nav className="crumbs" aria-label="Breadcrumb"><a href="/">Beranda</a><ChevronRight size={14} /><a href="/produk">Katalog</a><ChevronRight size={14} /><span aria-current="page">{c.name}</span></nav>
-        <header className="pagehead"><h1>{c.h1}</h1><p>{c.desc}</p></header>
-        <div className="chips" aria-label="Kategori lain">
-          <a href="/produk" className="chip">Semua</a>
-          {Object.entries(categories).map(([s, x]) => <a key={s} href={`/kategori/${s}`} className={s === slug ? 'chip active' : 'chip'} aria-current={s === slug ? 'page' : undefined}>{x.name}</a>)}
-        </div>
-        {cards.length
-          ? <Catalog products={cards} lockCategory={c.name} />
-          : <p className="pdpdesc">Produk {c.name} belum tersedia di katalog. Hubungi kami untuk permintaan khusus.</p>}
-        <section className="catabout"><h2>Tentang {c.name.toLowerCase()} dari kami</h2><p>{c.body}</p><a className="primary" href={waLink(settings)} target="_blank" rel="noopener noreferrer">Konsultasi custom <MessageCircle size={18} /></a></section>
-      </main>
-      <SiteFooter settings={settings} checkout={checkoutEnabled} />
+      <StoreShell settings={settings} checkout={checkoutEnabled} search={false} active={`/kategori/${slug}`} moq={catalogMoq(products)}>
+        <main id="konten" className="container catpage">
+          <nav className="crumbs" aria-label="Breadcrumb"><a href="/">Beranda</a><ChevronRight size={14} aria-hidden="true" /><a href="/produk">Katalog</a><ChevronRight size={14} aria-hidden="true" /><span aria-current="page">{c.name}</span></nav>
+          <header className="pagehead">
+            <h1>{c.h1}</h1>
+            {/* dipotong dua baris di HP: uraian lengkapnya ada di blok "Tentang ... dari kami" di bawah */}
+            <p className="pagehead-desc pagehead-desc--clamp">{c.desc}</p>
+            {cards.length > 0 && (
+              <p className="pagefacts">
+                <span>{cards.length.toLocaleString('id-ID')} desain</span>
+                {fromPrice > 0 && <span>mulai {money(fromPrice)} /pcs</span>}
+                {minMoq > 0 && <span>min. {minMoq.toLocaleString('id-ID')} pcs</span>}
+              </p>
+            )}
+          </header>
+          <nav className="tabs" aria-label="Kategori produk">
+            <a href="/produk">Semua <small>{products.length.toLocaleString('id-ID')}</small></a>
+            {Object.entries(categories).map(([s, x]) => (
+              <a key={s} href={`/kategori/${s}`} aria-current={s === slug ? 'page' : undefined}>{x.name} <small>{products.filter(p => p.category === x.name).length.toLocaleString('id-ID')}</small></a>
+            ))}
+          </nav>
+          {cards.length
+            ? <Catalog products={cards} lockCategory={c.name} waHref={wa} />
+            : (
+              <div className="emptystate">
+                <EmptyArt />
+                <h2>Produk {c.name} belum tersedia</h2>
+                <p>Kategori ini belum punya produk di katalog. Hubungi kami untuk permintaan khusus.</p>
+                <div className="btnrow">
+                  <a className="btn btn-outline" href="/produk">Lihat semua produk</a>
+                  <a className="btn btn-wa-outline" href={wa} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} aria-hidden="true" /> Tanya via WhatsApp</a>
+                </div>
+              </div>
+            )}
+          <section className="catabout" aria-labelledby="catabout-title">
+            <div className="catabout-text">
+              <h2 id="catabout-title">Tentang {c.name.toLowerCase()} dari kami</h2>
+              <p>{c.body}</p>
+            </div>
+            <aside className="panel-soft catabout-cta" aria-labelledby="catabout-cta-title">
+              <h3 id="catabout-cta-title">Butuh custom?</h3>
+              <p>Ukuran, motif, dan logo bisa disesuaikan dengan brand kamu.</p>
+              <a className="btn btn-wa-outline" href={wa} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} aria-hidden="true" /> Konsultasi custom via WhatsApp</a>
+            </aside>
+          </section>
+        </main>
+      </StoreShell>
     </>
   );
 }

@@ -7,7 +7,7 @@ export function PaymentOptions({ compact = false, qris = false }: { compact?: bo
     <ul className={compact ? 'paylist compact' : 'paylist'} aria-label="Metode pembayaran">
       {paymentMethods.filter(m => qris || m.id !== 'qris').map(m => (
         <li key={m.id} className="payitem">
-          <span className="payicon">{m.id === 'whatsapp' ? <MessageCircle size={18} /> : <QrCode size={18} />}</span>
+          <span className="payicon" aria-hidden="true">{m.id === 'whatsapp' ? <MessageCircle size={20} /> : <QrCode size={20} />}</span>
           <span className="paytext">
             <b>{m.name}</b>
             {!compact && <small>{m.description}</small>}

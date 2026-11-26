@@ -4,6 +4,8 @@ import { getData } from '@/lib/data';
 import { categories } from '@/lib/categories';
 import { clip } from '@/lib/seo';
 import { safeUrl } from '@/lib/safe';
+import { waLink } from '@/lib/wa';
+import { formatWa } from '@/components/site-chrome';
 
 export const revalidate = 300;
 
@@ -22,7 +24,10 @@ export default function AboutPage() {
     <InfoPage title="Tentang Kami" path="/tentang-kami">
       {s => (
         <>
-          <p><strong>{s.company_name}</strong> adalah supplier goodie bag yang melayani reseller, event organizer, perusahaan, dan toko retail. {s.about}</p>
+          {/* settings.about (diatur admin) sudah menjelaskan siapa yang dilayani; kalimat tetap hanya jadi cadangan bila kosong */}
+          {s.about?.trim()
+            ? <p><strong>{s.company_name}</strong>. {s.about.trim()}</p>
+            : <p><strong>{s.company_name}</strong> adalah supplier goodie bag yang melayani reseller, event organizer, perusahaan, dan toko retail.</p>}
 
           <h2>Apa yang kami sediakan</h2>
           <ul>
@@ -31,7 +36,7 @@ export default function AboutPage() {
 
           <h2>Cara kami bekerja</h2>
           <ul>
-            <li><strong>Ready stock.</strong> Stok, harga per pcs, dan minimum order tampil langsung di <a href="/#produk">katalog</a>, jadi kamu bisa menghitung kebutuhan sebelum memesan.</li>
+            <li><strong>Ready stock.</strong> Stok, harga per pcs, dan minimum order tampil langsung di <a href="/produk">katalog</a>, jadi kamu bisa menghitung kebutuhan sebelum memesan.</li>
             <li><strong>Custom.</strong> Ukuran, motif, dan logo bisa disesuaikan dengan brand kamu. Tim kami mendampingi dari konsultasi sampai pengiriman.</li>
             <li><strong>Pengiriman.</strong> Pesanan dikirim dari gudang kami ke seluruh Indonesia. Ongkos kirim dikonfirmasi sesuai alamat dan jumlah barang.</li>
           </ul>
@@ -40,7 +45,7 @@ export default function AboutPage() {
           <p>
             {s.company_name}<br />
             {s.address}<br />
-            WhatsApp: +{s.whatsapp_number.replace(/\D/g, '')}
+            WhatsApp: <a className="num" href={waLink(s)} target="_blank" rel="noopener noreferrer">{formatWa(s.whatsapp_number)}</a>
             {safeUrl(s.google_maps_url) && <><br /><a href={safeUrl(s.google_maps_url)} target="_blank" rel="noopener noreferrer">Lihat lokasi di Google Maps</a></>}
           </p>
         </>

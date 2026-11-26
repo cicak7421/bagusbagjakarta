@@ -22,18 +22,23 @@ export function PromoModal({ promo, onClose, imgSize }: { promo: Promo; onClose:
 
   const external = /^https?:\/\//.test(promo.button_url);
   const hasBody = !!(promo.title || promo.text || promo.button_label);
+  // Gambar yang gagal dimuat (misalnya filenya sudah dihapus dari storage) dilepas dari popup,
+  // lalu popup memakai tata letak "teks saja" (class promo-card--text).
+  const [imgFailed, setImgFailed] = useState(false);
+  useEffect(() => setImgFailed(false), [promo.image_url]);
+  const showImg = !!promo.image_url && !imgFailed;
   return (
     <div className="promo-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="promo-card" role="dialog" aria-modal="true" aria-label={promo.title || 'Promo'}>
+      <div className={showImg ? 'promo-card' : 'promo-card promo-card--text'} role="dialog" aria-modal="true" aria-label={promo.title || 'Promo'}>
         <button ref={closeRef} type="button" className="promo-close" aria-label="Tutup popup" onClick={onClose}><X size={20} /></button>
-        {promo.image_url && (
+        {showImg && (
           <img
             className="promo-img"
             {...responsiveImg(promo.image_url, [640, 828], '(max-width: 480px) 100vw, 440px')}
             alt={promo.title || 'Promo'}
             {...(imgSize ? { width: imgSize.w, height: imgSize.h } : {})}
             decoding="async"
-            onError={e => { e.currentTarget.style.display = 'none'; }}
+            onError={() => setImgFailed(true)}
           />
         )}
         {hasBody && (
@@ -60,6 +65,7 @@ export default function PromoPopup({ promo }: { promo?: Promo | null }) {
   const p = useMemo(() => normalizePromo(promo), [promo]);
   const [open, setOpen] = useState(false);
   const [size, setSize] = useState<Size | undefined>();
+  const [noImg, setNoImg] = useState(false);   // gambar gagal dimuat saat pramuat: popup tampil tanpa gambar, tidak diminta ulang
   const key = `promo-dismissed:${promoKey(p)}`;
 
   useEffect(() => {
@@ -82,6 +88,7 @@ export default function PromoPopup({ promo }: { promo?: Promo | null }) {
         if (cancelled) return;
         if (ok && img.naturalWidth) setSize({ w: img.naturalWidth, h: img.naturalHeight });
         // Gagal muat gambar: tetap tampilkan popup kalau masih ada teks
+        if (!ok) setNoImg(true);
         if (ok || p.title || p.text) setOpen(true);
       };
       img.onload = () => done(true);
@@ -104,5 +111,6 @@ export default function PromoPopup({ promo }: { promo?: Promo | null }) {
     try { sessionStorage.setItem(key, '1'); } catch { /* abaikan */ }
   }, [key]);
 
-  return open ? <PromoModal promo={p} onClose={close} imgSize={size} /> : null;
+  const shown = useMemo(() => (noImg ? { ...p, image_url: '' } : p), [p, noImg]);
+  return open ? <PromoModal promo={shown} onClose={close} imgSize={size} /> : null;
 }

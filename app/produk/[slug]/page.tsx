@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronRight } from 'lucide-react';
 import { getData } from '@/lib/data';
 import { money } from '@/lib/format';
 import { siteUrl } from '@/lib/site';
-import { SiteFooter, SiteHeader } from '@/components/site-chrome';
+import { ShipNote, StoreShell, catalogMoq } from '@/components/site-chrome';
 import ProductBuy from '@/components/product-buy';
 import { ProductCard } from '@/components/product-card';
 import { productSoldOut, startingPrice } from '@/lib/variants';
@@ -69,42 +69,77 @@ export default async function ProductPage({ params }: Props) {
       },
     ],
   };
+  const catHref = `/kategori/${p.category.toLowerCase()}`;
+  const pcs = (n: number) => `${n.toLocaleString('id-ID')} pcs`;
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(jsonLd)} />
-      <SiteHeader settings={settings} checkout={checkoutEnabled} />
-      <main className="container pdp">
-        <nav className="crumbs" aria-label="Breadcrumb"><a href="/">Beranda</a><ChevronRight size={14} /><a href="/produk">Katalog</a><ChevronRight size={14} /><a href={`/kategori/${p.category.toLowerCase()}`}>{p.category}</a><ChevronRight size={14} /><span aria-current="page">{p.name}</span></nav>
-        <ProductBuy product={p} settings={settings} checkout={checkoutEnabled} qris={checkoutEnabled && qrisReady()} />
+      <StoreShell settings={settings} checkout={checkoutEnabled} bar active={catHref} moq={catalogMoq(products)}>
+        <main id="konten" className="container pdp">
+          <nav className="crumbs" aria-label="Breadcrumb">
+            <a href="/">Beranda</a><ChevronRight size={14} aria-hidden="true" />
+            <a href="/produk">Katalog</a><ChevronRight size={14} aria-hidden="true" />
+            <a href={catHref}>{p.category}</a><ChevronRight size={14} aria-hidden="true" />
+            <span aria-current="page">{p.name}</span>
+          </nav>
+          <ProductBuy product={p} settings={settings} checkout={checkoutEnabled} qris={checkoutEnabled && qrisReady()} shipNote={<ShipNote settings={settings} compact />} />
 
-        <section className="pdpinfo" aria-labelledby="desc-title">
-          <div>
-            <h2 id="desc-title">Deskripsi</h2>
-            <p>{p.description}{p.is_customizable && ' Bisa dicustom dengan logo, motif, dan ukuran sesuai brand kamu.'}</p>
-          </div>
-          <div>
-            <h2>Spesifikasi</h2>
-            <dl className="spectable">
-              {p.sku && <div><dt>Kode SKU</dt><dd>{p.sku}</dd></div>}
-              <div><dt>Kategori</dt><dd>{p.category}</dd></div>
-              {sizes.length > 0
-                ? <div><dt>Ukuran tersedia</dt><dd>{sizes.map(s => s.name).join(' · ')}</dd></div>
-                : p.size && <div><dt>Ukuran</dt><dd>{p.size}</dd></div>}
-              <div><dt>Minimum order</dt><dd>{p.min_order.toLocaleString('id-ID')} pcs</dd></div>
-              <div><dt>Custom logo / motif</dt><dd>{p.is_customizable ? 'Bisa, konsultasi via WhatsApp' : 'Tidak tersedia untuk desain ini'}</dd></div>
-              <div><dt>Dikirim dari</dt><dd>{settings.address}</dd></div>
-            </dl>
-          </div>
-        </section>
-
-        {related.length > 0 && (
-          <section className="related" aria-labelledby="rel-title">
-            <div className="sechead"><h2 id="rel-title">Produk serupa</h2><a className="seclink" href={`/kategori/${p.category.toLowerCase()}`}>Lihat semua {p.category.toLowerCase()}</a></div>
-            <div className="pgrid">{related.map(r => <ProductCard key={r.id} p={r} />)}</div>
+          <section className="pdpinfo" aria-labelledby="desc-title">
+            <div className="pdp-desc">
+              <h2 id="desc-title">Deskripsi</h2>
+              <p>{p.description}{p.is_customizable && ' Bisa dicustom dengan logo, motif, dan ukuran sesuai brand kamu.'}</p>
+            </div>
+            <div className="card speccard">
+              <h2 id="spec-title">Spesifikasi</h2>
+              <dl className="spectable" aria-labelledby="spec-title">
+                {p.sku && <div><dt>Kode SKU</dt><dd>{p.sku}</dd></div>}
+                <div><dt>Kategori</dt><dd>{p.category}</dd></div>
+                {sizes.length > 0
+                  ? <div><dt>Ukuran tersedia</dt><dd>{sizes.map(s => s.name).join(' · ')}</dd></div>
+                  : p.size && <div><dt>Ukuran</dt><dd>{p.size}</dd></div>}
+                {p.colors.length > 0 && <div><dt>Pilihan warna</dt><dd>{p.colors.map(c => c.name).join(' · ')}</dd></div>}
+                {p.motifs.length > 0 && <div><dt>Pilihan motif</dt><dd>{p.motifs.map(m => m.name).join(' · ')}</dd></div>}
+                <div><dt>Minimum order</dt><dd>{pcs(p.min_order)}</dd></div>
+                <div><dt>Custom logo / motif</dt><dd>{p.is_customizable ? 'Bisa, konsultasi via WhatsApp' : 'Tidak tersedia untuk desain ini'}</dd></div>
+                <div><dt>Dikirim dari</dt><dd>{settings.address}</dd></div>
+              </dl>
+              {sizes.length > 1 && (
+                <div className="pricetable-wrap">
+                  <h3 id="size-title">Harga per ukuran</h3>
+                  <div className="pricetable-scroll">
+                    <table className="pricetable" aria-labelledby="size-title">
+                      <thead><tr><th scope="col">Ukuran</th><th scope="col">Harga /pcs</th><th scope="col">Stok</th></tr></thead>
+                      <tbody>
+                        {sizes.map((s, i) => {
+                          const sizePrice = s.price || p.price;
+                          const sizeStock = s.stock_qty ?? p.stock_qty;
+                          return (
+                            <tr key={s.name + i}>
+                              <th scope="row">{s.name}</th>
+                              <td>{sizePrice > 0 ? money(sizePrice) : 'Tanya harga'}</td>
+                              <td className={sizeStock > 0 ? undefined : 'is-out'}>{sizeStock > 0 ? pcs(sizeStock) : 'Habis'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
           </section>
-        )}
-      </main>
-      <SiteFooter settings={settings} checkout={checkoutEnabled} />
+
+          {related.length > 0 && (
+            <section className="related" aria-labelledby="rel-title">
+              <div className="sechead">
+                <div><p className="seclabel">Katalog</p><h2 id="rel-title">Produk serupa</h2></div>
+                <a className="seclink" href={catHref}>Lihat semua {p.category.toLowerCase()} <ArrowRight size={16} aria-hidden="true" /></a>
+              </div>
+              <div className="pgrid">{related.map(r => <ProductCard key={r.id} p={r} />)}</div>
+            </section>
+          )}
+        </main>
+      </StoreShell>
     </>
   );
 }

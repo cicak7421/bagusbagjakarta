@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { Check } from 'lucide-react';
 import { getData } from '@/lib/data';
 import { getSessionUser } from '@/lib/session';
-import { SiteFooter, SiteHeader } from '@/components/site-chrome';
+import { qrisReady } from '@/lib/payments';
+import { EmptyArt, ShipNote, StoreShell } from '@/components/site-chrome';
 import CheckoutForm from '@/components/checkout-form';
 import { EMPTY_PROFILE, type Profile } from '@/components/account-view';
 
@@ -19,13 +21,21 @@ export default async function CheckoutPage() {
   const meta = (user.user_metadata ?? {}) as { full_name?: string; phone?: string };
   const profile: Profile = { ...EMPTY_PROFILE, full_name: meta.full_name ?? '', phone: meta.phone ?? '', ...(data ?? {}) };
   return (
-    <>
-      <SiteHeader settings={settings} checkout />
-      <main className="container shop">
-        <header className="shophead"><div><h1>Checkout</h1><p>Isi alamat pengiriman, lalu buat pesanan.</p></div></header>
-        <CheckoutForm profile={profile} email={user.email ?? ''} />
+    <StoreShell settings={settings} checkout variant="min" fab={false} bar>
+      <main id="konten" className="container container--form flowpage">
+        <header className="shophead cohead">
+          <div><h1>Checkout</h1><p>Isi alamat pengiriman, lalu buat pesanan.</p></div>
+          <div className="flowwrap">
+            <ol className="flowsteps" aria-label="Langkah checkout">
+              <li className="is-done"><a href="/keranjang"><span className="fs-dot"><Check size={14} aria-hidden="true" /></span><span className="fs-label">Keranjang</span></a></li>
+              <li className="is-now" aria-current="step"><span className="fs-dot">2</span><span className="fs-label">Alamat dan pembayaran</span></li>
+              <li><span className="fs-dot">3</span><span className="fs-label">Bayar</span></li>
+            </ol>
+            <p className="fs-count" aria-hidden="true">Langkah 2 dari 3</p>
+          </div>
+        </header>
+        <CheckoutForm profile={profile} email={user.email ?? ''} qris={qrisReady()} shipNote={<ShipNote settings={settings} />} art={<EmptyArt />} />
       </main>
-      <SiteFooter settings={settings} checkout />
-    </>
+    </StoreShell>
   );
 }

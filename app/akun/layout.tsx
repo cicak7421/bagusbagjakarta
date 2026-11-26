@@ -1,16 +1,16 @@
 import type { Metadata } from 'next';
 import { getData } from '@/lib/data';
-import { SiteFooter, SiteHeader } from '@/components/site-chrome';
+import { StoreShell, catalogMoq } from '@/components/site-chrome';
 
-export const metadata: Metadata = { title: 'Akun saya', robots: { index: false, follow: false } };
+// Judul berupa objek supaya pola "… | Tre Joy Ease Indonesia" dari app/layout.tsx tetap berlaku untuk halaman di bawah /akun
+// (judul layout berupa string memutus template untuk halaman anaknya).
+export const metadata: Metadata = { title: { default: 'Akun saya', template: '%s | Tre Joy Ease Indonesia' }, robots: { index: false, follow: false } };
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
-  const { settings } = await getData();
+  const { settings, products } = await getData();
   return (
-    <>
-      <SiteHeader settings={settings} checkout />
-      <main className="container shop">{children}</main>
-      <SiteFooter settings={settings} checkout />
-    </>
+    <StoreShell settings={settings} checkout moq={catalogMoq(products)}>
+      <main id="konten" className="container container--form flowpage">{children}</main>
+    </StoreShell>
   );
 }
